@@ -1,0 +1,1328 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>CropSci — Learn Crops</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+/* ===== VARIABLES ===== */
+:root {
+  --soil: #2C1A0E; --earth: #5C3D1E; --bark: #8B5E3C;
+  --leaf: #3A6B35; --leaf2: #5A9E52; --sprout: #8DC26F;
+  --sun: #E8A020; --wheat: #F2CC78;
+  --cream: #FDF6EC; --paper: #FAF1E0; --mist: #EEE5D3;
+  --ink: #1A1008; --text: #3D2B1A; --muted: #7A5C3E;
+  --surface: #ffffff; --bg: #FDF6EC; --border: #EEE5D3;
+  --shadow: rgba(44,26,14,.10);
+  --r: 14px; --r-lg: 20px;
+  --nav-h: 56px; --bot-h: 66px;
+  --correct: #27AE60; --wrong: #e74c3c;
+  --transition: .28s cubic-bezier(.4,0,.2,1);
+}
+[data-theme="dark"] {
+  --bg: #130D06; --surface: #1E1208; --paper: #1E1208;
+  --cream: #130D06; --mist: #2C1A0E; --border: #3D2512;
+  --text: #F0E8D8; --muted: #B89870; --bark: #B89870;
+  --shadow: rgba(0,0,0,.35); --soil: #E8D8B8; --earth: #D4A860;
+}
+/* ===== RESET ===== */
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+html{scroll-behavior:smooth;}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;overscroll-behavior:none;transition:background var(--transition),color var(--transition);}
+
+/* ===== DESKTOP NAV ===== */
+.desktop-nav{background:var(--soil);padding:0 1.5rem;display:flex;align-items:center;gap:0;position:sticky;top:0;z-index:200;box-shadow:0 2px 16px rgba(0,0,0,.3);}
+.logo{font-family:'Playfair Display',serif;font-size:1.25rem;color:var(--wheat);padding:1rem 1.4rem 1rem 0;border-right:1px solid var(--earth);margin-right:1rem;white-space:nowrap;letter-spacing:-.01em;}
+.logo span{color:var(--sprout);}
+.tabs{display:flex;gap:0;flex:1;}
+.tab{padding:.85rem 1rem;color:var(--bark);cursor:pointer;font-size:.84rem;font-weight:500;letter-spacing:.03em;border-bottom:3px solid transparent;transition:all .2s;white-space:nowrap;user-select:none;}
+.tab:hover{color:var(--wheat);}
+.tab.active{color:var(--sprout);border-bottom-color:var(--sprout);}
+.nav-right{margin-left:auto;display:flex;align-items:center;gap:.75rem;}
+.score-badge{background:var(--leaf);color:#fff;border-radius:20px;padding:.3rem .9rem;font-size:.8rem;font-weight:600;white-space:nowrap;}
+.dark-btn{background:none;border:1px solid var(--earth);color:var(--wheat);border-radius:8px;padding:.35rem .6rem;cursor:pointer;font-size:1rem;transition:all .2s;line-height:1;}
+.dark-btn:hover{background:var(--earth);}
+
+/* ===== MOBILE HEADER ===== */
+.mobile-header{display:none;background:var(--soil);position:sticky;top:0;z-index:200;padding:0 1rem;height:var(--nav-h);align-items:center;justify-content:space-between;box-shadow:0 2px 16px rgba(0,0,0,.3);}
+.mob-logo{font-family:'Playfair Display',serif;font-size:1.1rem;color:var(--wheat);}
+.mob-logo span{color:var(--sprout);}
+.mob-right{display:flex;align-items:center;gap:.5rem;}
+.mob-score{background:var(--leaf);color:#fff;border-radius:20px;padding:.25rem .7rem;font-size:.75rem;font-weight:600;}
+.mob-dark-btn{background:none;border:none;color:var(--wheat);font-size:1.1rem;cursor:pointer;padding:.3rem;line-height:1;}
+
+/* ===== BOTTOM NAV ===== */
+.bottom-nav{display:none;position:fixed;bottom:0;left:0;right:0;background:var(--soil);z-index:200;padding:0;padding-bottom:env(safe-area-inset-bottom);box-shadow:0 -2px 20px rgba(0,0,0,.3);}
+.bottom-tabs{display:flex;height:var(--bot-h);}
+.bot-tab{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:.2rem;cursor:pointer;color:var(--bark);transition:all .2s;padding:.5rem .25rem;border:none;background:none;font-family:'DM Sans',sans-serif;position:relative;}
+.bot-tab .icon{font-size:1.35rem;line-height:1;transition:transform .2s;}
+.bot-tab .label{font-size:.62rem;font-weight:600;letter-spacing:.04em;text-transform:uppercase;transition:color .2s;}
+.bot-tab.active{color:var(--sprout);}
+.bot-tab.active .icon{transform:translateY(-2px);}
+.bot-tab::after{content:'';position:absolute;top:0;left:20%;right:20%;height:2px;background:var(--sprout);border-radius:0 0 4px 4px;transform:scaleX(0);transition:transform .25s;}
+.bot-tab.active::after{transform:scaleX(1);}
+
+/* ===== MAIN ===== */
+main{max-width:1200px;margin:0 auto;padding:1.5rem 1.25rem 2rem;}
+@media(max-width:768px){main{padding:1rem .85rem calc(var(--bot-h) + 1.5rem);}}
+
+/* ===== PAGE TRANSITIONS ===== */
+.page{display:none;}
+.page.active{display:block;animation:pageIn .32s cubic-bezier(.25,.8,.25,1) both;}
+@keyframes pageIn{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
+
+/* ===== HERO ===== */
+.hero{text-align:center;padding:2.5rem 1.2rem 2rem;background:linear-gradient(135deg,var(--soil) 0%,var(--earth) 100%);border-radius:var(--r-lg);margin-bottom:1.75rem;color:var(--cream);position:relative;overflow:hidden;}
+.hero::before{content:'🌾';font-size:7rem;position:absolute;right:-1.5rem;top:-1rem;opacity:.12;pointer-events:none;}
+.hero h1{font-family:'Playfair Display',serif;font-size:clamp(1.7rem,5vw,2.4rem);margin-bottom:.4rem;line-height:1.2;}
+.hero h1 em{color:var(--wheat);font-style:italic;}
+.hero p{color:#C4B09A;font-size:.9rem;max-width:480px;margin:.4rem auto 1.25rem;}
+.stats-row{display:flex;gap:.7rem;justify-content:center;flex-wrap:wrap;}
+.stat{background:rgba(255,255,255,.09);border-radius:10px;padding:.55rem 1rem;font-size:.8rem;backdrop-filter:blur(4px);}
+.stat strong{color:var(--wheat);display:block;font-size:1.2rem;font-weight:700;}
+
+/* ===== PROGRESS PANEL ===== */
+.progress-panel{background:var(--surface);border:1.5px solid var(--border);border-radius:var(--r);padding:1rem 1.2rem;margin-bottom:1.25rem;display:flex;align-items:center;gap:1rem;flex-wrap:wrap;}
+.prog-ring-wrap{flex-shrink:0;}
+.prog-ring{transform:rotate(-90deg);}
+.prog-ring .track{fill:none;stroke:var(--mist);stroke-width:4;}
+.prog-ring .fill{fill:none;stroke:var(--leaf2);stroke-width:4;stroke-linecap:round;transition:stroke-dashoffset 1s cubic-bezier(.4,0,.2,1);}
+.prog-info{flex:1;min-width:120px;}
+.prog-title{font-weight:600;font-size:.9rem;color:var(--soil);}
+[data-theme="dark"] .prog-title{color:var(--wheat);}
+.prog-sub{font-size:.78rem;color:var(--muted);margin-top:.15rem;}
+.prog-actions{display:flex;gap:.5rem;flex-wrap:wrap;}
+.weak-btn{padding:.45rem .9rem;border:1.5px solid var(--sun);border-radius:8px;background:transparent;color:var(--sun);cursor:pointer;font-size:.78rem;font-weight:600;transition:all .2s;}
+.weak-btn:hover{background:var(--sun);color:#fff;}
+.reset-btn{padding:.45rem .9rem;border:1.5px solid var(--mist);border-radius:8px;background:transparent;color:var(--muted);cursor:pointer;font-size:.78rem;font-weight:600;transition:all .2s;}
+.reset-btn:hover{background:var(--mist);}
+
+/* ===== WEAK SPOTS ===== */
+.weak-panel{background:linear-gradient(135deg,#fff8ee,var(--paper));border:2px solid var(--sun);border-radius:var(--r);padding:1rem 1.2rem;margin-bottom:1.25rem;display:none;}
+.weak-panel.visible{display:block;animation:pageIn .3s ease;}
+.weak-title{font-size:.8rem;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--sun);margin-bottom:.75rem;}
+.weak-list{display:flex;flex-wrap:wrap;gap:.5rem;}
+.weak-pill{background:rgba(232,160,32,.12);border:1px solid rgba(232,160,32,.3);border-radius:8px;padding:.4rem .8rem;font-size:.8rem;cursor:pointer;transition:all .2s;}
+.weak-pill:hover{background:var(--sun);color:#fff;}
+.weak-pill strong{display:block;font-size:.7rem;font-weight:600;color:var(--sun);}
+[data-theme="dark"] .weak-panel{background:linear-gradient(135deg,#1E1208,#251508);}
+
+/* ===== CONTROLS ===== */
+.controls{display:flex;gap:.6rem;margin-bottom:1.1rem;flex-wrap:wrap;align-items:center;}
+.search-wrap{position:relative;flex:1;min-width:180px;}
+.search-wrap input{width:100%;padding:.7rem 1rem .7rem 2.6rem;border:2px solid var(--border);border-radius:10px;background:var(--surface);font-family:'DM Sans',sans-serif;font-size:.93rem;color:var(--text);outline:none;transition:border-color .2s;}
+.search-wrap input::placeholder{color:var(--muted);}
+.search-wrap input:focus{border-color:var(--leaf2);}
+.search-wrap::before{content:'🔍';position:absolute;left:.8rem;top:50%;transform:translateY(-50%);font-size:.82rem;pointer-events:none;}
+.filter-btn{padding:.55rem .9rem;border:2px solid var(--border);border-radius:8px;background:var(--surface);cursor:pointer;font-family:'DM Sans',sans-serif;font-size:.8rem;font-weight:500;color:var(--muted);transition:all .2s;white-space:nowrap;}
+.filter-btn:hover,.filter-btn.active{background:var(--leaf);color:white;border-color:var(--leaf);}
+.view-toggle{display:flex;border:2px solid var(--border);border-radius:8px;overflow:hidden;}
+.view-btn{padding:.5rem .75rem;border:none;background:var(--surface);cursor:pointer;font-size:.9rem;color:var(--muted);transition:all .2s;}
+.view-btn.active{background:var(--leaf);color:white;}
+
+/* ===== CARD GRID ===== */
+.crops-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(290px,1fr));gap:.9rem;}
+.crop-card{background:var(--surface);border-radius:var(--r);border:1.5px solid var(--border);padding:1.1rem 1.3rem;cursor:pointer;transition:transform .22s,box-shadow .22s,border-color .22s;position:relative;overflow:hidden;animation:staggerIn .4s both;}
+@keyframes staggerIn{from{opacity:0;transform:translateY(16px) scale(.97)}to{opacity:1;transform:translateY(0) scale(1)}}
+.crop-card::before{content:'';position:absolute;left:0;top:0;bottom:0;width:4px;background:var(--leaf2);}
+.crop-card:hover{border-color:var(--leaf2);transform:translateY(-3px);box-shadow:0 10px 24px var(--shadow);}
+.crop-card:active{transform:translateY(-1px) scale(.99);}
+.crop-cat{font-size:.68rem;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);margin-bottom:.35rem;}
+.crop-name{font-family:'Playfair Display',serif;font-size:1.15rem;font-weight:700;color:var(--soil);}
+[data-theme="dark"] .crop-name{color:var(--wheat);}
+.crop-sci{font-family:'DM Mono',monospace;font-size:.78rem;color:var(--leaf2);margin:.22rem 0;}
+.crop-fam{font-size:.78rem;color:var(--muted);}
+.crop-nick{font-size:.76rem;color:var(--sun);margin-top:.45rem;font-style:italic;line-height:1.4;}
+.crop-no{position:absolute;top:.75rem;right:.85rem;font-size:.72rem;font-weight:600;color:var(--border);font-family:'DM Mono',monospace;}
+.known-badge{position:absolute;bottom:.75rem;right:.85rem;font-size:.65rem;font-weight:700;padding:.18rem .5rem;border-radius:20px;background:var(--leaf);color:white;opacity:0;transition:opacity .2s;}
+.crop-card.is-known .known-badge{opacity:1;}
+.crop-card.is-known{border-color:rgba(58,107,53,.3);}
+
+/* CATEGORY COLORS */
+.crop-card[data-cat="cereal"]::before{background:#E8A020;}
+.crop-card[data-cat="pulse"]::before{background:#C0784A;}
+.crop-card[data-cat="oilseed"]::before{background:#D4B820;}
+.crop-card[data-cat="cash"]::before{background:#5A9E52;}
+.crop-card[data-cat="fruit"]::before{background:#D45A8C;}
+.crop-card[data-cat="vegetable"]::before{background:#4A90D9;}
+.crop-card[data-cat="spice"]::before{background:#C45A3A;}
+.crop-card[data-cat="flower"]::before{background:#9B59B6;}
+.crop-card[data-cat="fodder"]::before{background:#27AE60;}
+.crop-card[data-cat="beverage"]::before{background:#8B4513;}
+.crop-card[data-cat="medicinal"]::before{background:#1ABC9C;}
+
+/* TABLE VIEW */
+.crops-table{width:100%;border-collapse:collapse;display:none;}
+.crops-table.visible{display:table;}
+.crops-grid.hidden{display:none;}
+.crops-table th{background:var(--soil);color:var(--wheat);padding:.7rem .9rem;text-align:left;font-size:.78rem;font-weight:600;letter-spacing:.05em;text-transform:uppercase;position:sticky;top:calc(var(--nav-h));}
+.crops-table td{padding:.65rem .9rem;border-bottom:1px solid var(--border);font-size:.84rem;vertical-align:middle;cursor:pointer;transition:background .15s;}
+.crops-table tr:hover td{background:rgba(90,158,82,.06);}
+.crops-table .td-name{font-family:'Playfair Display',serif;font-weight:700;font-size:.95rem;color:var(--soil);}
+[data-theme="dark"] .crops-table .td-name{color:var(--wheat);}
+.crops-table .td-sci{font-family:'DM Mono',monospace;color:var(--leaf2);font-size:.78rem;}
+.crops-table .td-cat{font-size:.7rem;background:var(--mist);border-radius:20px;padding:.18rem .55rem;font-weight:600;text-transform:uppercase;letter-spacing:.06em;}
+.crops-table .td-known{text-align:center;}
+
+/* ===== NO RESULTS ===== */
+.no-results{text-align:center;padding:3rem 1rem;color:var(--muted);}
+.no-results .emoji{font-size:2.5rem;display:block;margin-bottom:.75rem;}
+
+/* ===== MODAL ===== */
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:1000;align-items:flex-end;justify-content:center;padding:0;backdrop-filter:blur(3px);}
+.modal-overlay.open{display:flex;}
+.modal{background:var(--surface);border-radius:24px 24px 0 0;width:100%;max-width:600px;max-height:92vh;overflow-y:auto;padding:1.75rem 1.5rem 2rem;position:relative;animation:slideUp .32s cubic-bezier(.25,.8,.25,1);}
+@keyframes slideUp{from{transform:translateY(100%);opacity:0}to{transform:translateY(0);opacity:1}}
+.modal-handle{width:36px;height:4px;background:var(--mist);border-radius:4px;margin:0 auto 1.25rem;}
+.modal-close{position:absolute;top:1rem;right:1rem;width:32px;height:32px;border-radius:50%;border:none;background:var(--mist);cursor:pointer;font-size:1rem;display:flex;align-items:center;justify-content:center;color:var(--muted);transition:all .2s;}
+.modal-close:hover{background:var(--earth);color:white;}
+.modal-cat-tag{display:inline-block;padding:.28rem .75rem;border-radius:20px;font-size:.72rem;font-weight:700;background:var(--leaf);color:white;margin-bottom:.7rem;letter-spacing:.06em;text-transform:uppercase;}
+.modal h2{font-family:'Playfair Display',serif;font-size:1.7rem;color:var(--soil);margin-bottom:.25rem;line-height:1.2;}
+[data-theme="dark"] .modal h2{color:var(--wheat);}
+.modal-sci{font-family:'DM Mono',monospace;font-size:.92rem;color:var(--leaf2);margin-bottom:.12rem;}
+.modal-fam{font-size:.85rem;color:var(--muted);margin-bottom:.9rem;padding-bottom:.9rem;border-bottom:1px solid var(--border);}
+.info-row{display:flex;gap:.6rem;margin:.5rem 0;align-items:flex-start;}
+.info-label{font-size:.74rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);min-width:90px;padding-top:.12rem;flex-shrink:0;}
+.info-val{font-size:.87rem;color:var(--text);line-height:1.55;}
+.mem-tip{background:var(--paper);border-radius:10px;padding:.9rem 1rem;margin-top:1rem;border-left:3px solid var(--sun);}
+.mem-tip h4{font-size:.73rem;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--sun);margin-bottom:.35rem;}
+.mem-tip p{font-size:.86rem;color:var(--text);line-height:1.55;}
+.modal-known-row{display:flex;gap:.6rem;margin-top:1.2rem;}
+.modal-mark-btn{flex:1;padding:.7rem;border-radius:10px;border:none;cursor:pointer;font-family:'DM Sans',sans-serif;font-weight:600;font-size:.85rem;transition:all .2s;}
+.modal-mark-btn.know{background:rgba(39,174,96,.1);color:var(--correct);border:2px solid rgba(39,174,96,.25);}
+.modal-mark-btn.know:hover,.modal-mark-btn.know.active{background:var(--correct);color:white;}
+.modal-mark-btn.review{background:rgba(231,76,60,.08);color:var(--wrong);border:2px solid rgba(231,76,60,.2);}
+.modal-mark-btn.review:hover,.modal-mark-btn.review.active{background:var(--wrong);color:white;}
+
+/* ===== FLASHCARD ===== */
+.flashcard-wrap{display:flex;flex-direction:column;align-items:center;gap:1.25rem;}
+.fc-header{text-align:center;margin-bottom:.25rem;}
+.fc-header h2{font-family:'Playfair Display',serif;font-size:1.6rem;color:var(--soil);}
+[data-theme="dark"] .fc-header h2{color:var(--wheat);}
+.fc-header p{color:var(--muted);font-size:.85rem;margin-top:.25rem;}
+.fc-mode-row{display:flex;gap:.5rem;flex-wrap:wrap;justify-content:center;}
+.fc-mode-btn{padding:.48rem .9rem;border:2px solid var(--border);border-radius:8px;background:var(--surface);cursor:pointer;font-size:.8rem;font-weight:500;color:var(--muted);transition:all .2s;}
+.fc-mode-btn.active{background:var(--soil);color:var(--wheat);border-color:var(--soil);}
+.fc-progress{width:100%;max-width:580px;}
+.fc-prog-row{display:flex;align-items:center;gap:.75rem;margin-bottom:.4rem;}
+.fc-bar{flex:1;height:7px;background:var(--mist);border-radius:4px;overflow:hidden;}
+.fc-fill{height:100%;background:var(--leaf2);border-radius:4px;transition:width .5s cubic-bezier(.4,0,.2,1);}
+.fc-count{font-size:.82rem;color:var(--muted);white-space:nowrap;font-weight:600;}
+.fc-known-row{display:flex;gap:.5rem;font-size:.78rem;color:var(--muted);}
+.fc-known-row span{display:flex;align-items:center;gap:.25rem;}
+.fc-known-row .dot{width:8px;height:8px;border-radius:50%;background:var(--leaf2);}
+.fc-known-row .dot.r{background:var(--sun);}
+.flashcard{width:100%;max-width:580px;height:300px;perspective:1200px;cursor:pointer;-webkit-user-select:none;user-select:none;}
+.fc-inner{width:100%;height:100%;position:relative;transform-style:preserve-3d;transition:transform .55s cubic-bezier(.4,0,.2,1);}
+.fc-inner.flipped{transform:rotateY(180deg);}
+.fc-front,.fc-back{position:absolute;inset:0;border-radius:var(--r-lg);backface-visibility:hidden;-webkit-backface-visibility:hidden;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:1.75rem;text-align:center;}
+.fc-front{background:linear-gradient(135deg,var(--soil) 0%,#3A2215 100%);color:var(--cream);box-shadow:0 12px 40px rgba(44,26,14,.25);}
+.fc-back{background:var(--paper);border:2.5px solid var(--leaf2);transform:rotateY(180deg);box-shadow:0 12px 40px var(--shadow);}
+.fc-front .fc-label{font-size:.72rem;letter-spacing:.12em;text-transform:uppercase;color:#9A7A5A;margin-bottom:.85rem;font-weight:600;}
+.fc-front .fc-cat-tag{font-size:.65rem;padding:.2rem .6rem;border-radius:20px;background:rgba(255,255,255,.08);color:var(--wheat);margin-bottom:.6rem;text-transform:uppercase;letter-spacing:.08em;font-weight:600;}
+.fc-front .fc-question{font-family:'Playfair Display',serif;font-size:clamp(1.3rem,4vw,1.65rem);color:var(--wheat);line-height:1.3;}
+.fc-front .fc-hint{font-size:.76rem;color:#6A4A2A;margin-top:1.2rem;display:flex;align-items:center;gap:.35rem;}
+.fc-swipe-hint{font-size:.72rem;color:#6A4A2A;margin-top:.5rem;}
+.fc-back .fc-sci{font-family:'DM Mono',monospace;font-size:clamp(.95rem,3vw,1.2rem);color:var(--leaf2);font-weight:500;line-height:1.4;}
+.fc-back .fc-fam{font-size:.85rem;color:var(--muted);margin-top:.5rem;}
+.fc-back .fc-nick{font-size:.82rem;color:var(--sun);margin-top:.6rem;font-style:italic;}
+.fc-back .fc-cat-tag-back{font-size:.65rem;padding:.2rem .6rem;border-radius:20px;background:rgba(90,158,82,.12);color:var(--leaf);margin-bottom:.6rem;text-transform:uppercase;letter-spacing:.08em;font-weight:600;}
+.fc-controls{display:flex;gap:.75rem;width:100%;max-width:580px;}
+.fc-btn{padding:.7rem;border:none;border-radius:10px;cursor:pointer;font-family:'DM Sans',sans-serif;font-weight:600;font-size:.85rem;transition:all .2s;flex:1;display:flex;align-items:center;justify-content:center;gap:.4rem;}
+.fc-btn.prev{background:var(--mist);color:var(--muted);}
+.fc-btn.next{background:var(--leaf);color:white;}
+.fc-btn:hover{opacity:.88;transform:translateY(-1px);}
+.fc-btn:active{transform:translateY(0) scale(.97);}
+.fc-sr-buttons{display:flex;gap:.6rem;width:100%;max-width:580px;display:none;}
+.fc-sr-buttons.visible{display:flex;}
+.fc-sr-btn{flex:1;padding:.75rem;border:none;border-radius:10px;cursor:pointer;font-family:'DM Sans',sans-serif;font-weight:700;font-size:.88rem;transition:all .22s;}
+.fc-sr-btn.know{background:rgba(39,174,96,.12);color:var(--correct);border:2px solid rgba(39,174,96,.25);}
+.fc-sr-btn.know:hover{background:var(--correct);color:white;}
+.fc-sr-btn.review{background:rgba(231,76,60,.08);color:var(--wrong);border:2px solid rgba(231,76,60,.2);}
+.fc-sr-btn.review:hover{background:var(--wrong);color:white;}
+
+/* ===== QUIZ ===== */
+.quiz-wrap{max-width:640px;margin:0 auto;}
+.quiz-header{text-align:center;margin-bottom:1.5rem;}
+.quiz-header h2{font-family:'Playfair Display',serif;font-size:1.6rem;color:var(--soil);}
+[data-theme="dark"] .quiz-header h2{color:var(--wheat);}
+.quiz-streak{display:inline-flex;align-items:center;gap:.3rem;background:linear-gradient(135deg,#FF6B35,#E8A020);color:white;padding:.35rem .9rem;border-radius:20px;font-size:.8rem;font-weight:700;margin-top:.5rem;}
+.quiz-q-box{background:linear-gradient(135deg,var(--soil),#3A2215);border-radius:var(--r-lg);padding:1.75rem 1.5rem;color:var(--cream);margin-bottom:1.25rem;position:relative;overflow:hidden;}
+.quiz-timer-bar{position:absolute;bottom:0;left:0;height:3px;background:var(--sprout);border-radius:0;transition:width .1s linear;}
+.quiz-timer-bar.warning{background:var(--sun);}
+.quiz-timer-bar.danger{background:#e74c3c;}
+.q-meta{display:flex;justify-content:space-between;align-items:center;margin-bottom:.85rem;}
+.q-num{font-size:.75rem;color:var(--bark);letter-spacing:.08em;text-transform:uppercase;}
+.q-timer{font-size:.82rem;color:var(--bark);font-family:'DM Mono',monospace;font-weight:500;}
+.q-text{font-family:'Playfair Display',serif;font-size:clamp(1.1rem,3.5vw,1.4rem);color:var(--wheat);line-height:1.45;}
+.quiz-opts{display:grid;grid-template-columns:1fr 1fr;gap:.65rem;margin-bottom:1.1rem;}
+.quiz-opt{padding:.95rem 1rem;border:2px solid var(--border);border-radius:12px;background:var(--surface);cursor:pointer;font-size:.87rem;font-family:'DM Sans',sans-serif;color:var(--text);transition:all .2s;text-align:left;line-height:1.4;font-weight:500;}
+.quiz-opt:hover:not(:disabled){border-color:var(--leaf2);background:rgba(90,158,82,.07);}
+.quiz-opt:active:not(:disabled){transform:scale(.98);}
+.quiz-opt.correct{background:rgba(39,174,96,.1);border-color:var(--correct);color:var(--correct);animation:pop .3s ease;}
+.quiz-opt.wrong{background:rgba(231,76,60,.09);border-color:var(--wrong);color:var(--wrong);animation:shake .4s ease;}
+.quiz-opt:disabled{cursor:default;}
+@keyframes pop{0%{transform:scale(1)}50%{transform:scale(1.04)}100%{transform:scale(1)}}
+@keyframes shake{0%,100%{transform:translateX(0)}20%{transform:translateX(-7px)}40%{transform:translateX(7px)}60%{transform:translateX(-5px)}80%{transform:translateX(5px)}}
+.quiz-result{background:var(--paper);border-radius:10px;padding:.85rem 1rem;font-size:.87rem;border-left:3px solid var(--leaf2);display:none;line-height:1.5;}
+.quiz-result.show{display:block;animation:pageIn .25s ease;}
+.quiz-result.wrong-r{border-color:var(--wrong);}
+.quiz-nav{display:flex;justify-content:space-between;align-items:center;margin-top:.9rem;}
+.btn-primary{padding:.7rem 1.75rem;background:var(--leaf);color:white;border:none;border-radius:10px;cursor:pointer;font-family:'DM Sans',sans-serif;font-weight:700;font-size:.9rem;transition:all .2s;}
+.btn-primary:hover{background:var(--leaf2);transform:translateY(-1px);}
+.btn-primary:active{transform:scale(.97);}
+.quiz-score-final{text-align:center;padding:2.5rem 1.5rem;background:var(--surface);border-radius:var(--r-lg);border:2px solid var(--border);}
+.quiz-score-final h2{font-family:'Playfair Display',serif;font-size:2.2rem;color:var(--soil);margin-bottom:.4rem;}
+[data-theme="dark"] .quiz-score-final h2{color:var(--wheat);}
+.quiz-score-final p{color:var(--muted);font-size:1rem;}
+.quiz-star{font-size:3rem;margin-bottom.75rem;}
+.quiz-grade-bar{height:10px;background:var(--mist);border-radius:5px;margin:1rem 0;overflow:hidden;}
+.quiz-grade-fill{height:100%;border-radius:5px;transition:width 1s cubic-bezier(.4,0,.2,1);}
+.final-actions{display:flex;gap:.6rem;justify-content:center;margin-top:1.25rem;flex-wrap:wrap;}
+.quiz-wrong-list{margin-top:1.25rem;text-align:left;}
+.quiz-wrong-title{font-size:.76rem;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);margin-bottom:.5rem;}
+.quiz-wrong-item{background:rgba(231,76,60,.06);border:1px solid rgba(231,76,60,.15);border-radius:8px;padding:.5rem .75rem;margin-bottom:.35rem;font-size:.82rem;cursor:pointer;transition:background .2s;}
+.quiz-wrong-item:hover{background:rgba(231,76,60,.12);}
+.quiz-wrong-item .wname{font-weight:600;color:var(--text);}
+.quiz-wrong-item .wsci{font-family:'DM Mono',monospace;color:var(--leaf2);font-size:.76rem;}
+
+/* ===== FAMILIES ===== */
+.fam-section{margin-bottom:1.5rem;}
+.fam-header{display:flex;align-items:center;gap:.9rem;padding:.95rem 1.1rem;background:var(--surface);border-radius:12px;border:1.5px solid var(--border);cursor:pointer;transition:all .2s;user-select:none;}
+.fam-header:hover{border-color:var(--leaf2);}
+.fam-header:active{transform:scale(.99);}
+.fam-name{font-family:'Playfair Display',serif;font-size:1.1rem;color:var(--soil);}
+[data-theme="dark"] .fam-name{color:var(--wheat);}
+.fam-desc{font-size:.74rem;color:var(--muted);margin-top:.1rem;}
+.fam-count{font-size:.75rem;background:var(--leaf);color:white;padding:.18rem .55rem;border-radius:20px;flex-shrink:0;font-weight:600;}
+.fam-arrow{color:var(--muted);transition:transform .25s;flex-shrink:0;font-size:.9rem;}
+.fam-header.open .fam-arrow{transform:rotate(90deg);}
+.fam-crops{display:none;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:.5rem;margin:.5rem 0 .5rem .75rem;}
+.fam-crops.open{display:grid;}
+.fam-crop-pill{background:var(--paper);border:1px solid var(--border);border-radius:8px;padding:.48rem .85rem;font-size:.8rem;cursor:pointer;transition:all .2s;}
+.fam-crop-pill:hover{background:var(--leaf2);color:white;border-color:var(--leaf2);}
+.fam-crop-sci{font-family:'DM Mono',monospace;font-size:.7rem;color:var(--muted);margin-top:.1rem;}
+.fam-crop-pill:hover .fam-crop-sci{color:rgba(255,255,255,.7);}
+.fam-key-fact{font-size:.78rem;background:var(--paper);border-left:3px solid var(--sun);padding:.5rem .85rem;margin:.5rem .75rem .5rem;border-radius:0 8px 8px 0;color:var(--text);display:none;line-height:1.5;}
+.fam-key-fact.open{display:block;}
+
+/* ===== MATCH GAME ===== */
+.match-wrap{max-width:700px;margin:0 auto;}
+.match-header{text-align:center;margin-bottom:1.5rem;}
+.match-header h2{font-family:'Playfair Display',serif;font-size:1.6rem;color:var(--soil);}
+[data-theme="dark"] .match-header h2{color:var(--wheat);}
+.match-header p{color:var(--muted);font-size:.85rem;margin-top:.3rem;}
+.match-meta{display:flex;gap:.75rem;justify-content:center;margin-bottom:1.25rem;flex-wrap:wrap;}
+.match-stat{background:var(--surface);border:1.5px solid var(--border);border-radius:10px;padding:.5rem 1.1rem;font-size:.82rem;font-weight:600;color:var(--muted);}
+.match-stat span{color:var(--soil);font-size:1.1rem;display:block;}
+[data-theme="dark"] .match-stat span{color:var(--wheat);}
+.match-grid{display:grid;grid-template-columns:1fr 1fr;gap:.65rem;}
+.match-col{display:flex;flex-direction:column;gap:.5rem;}
+.match-card{padding:.85rem 1rem;border:2px solid var(--border);border-radius:12px;background:var(--surface);cursor:pointer;font-size:.84rem;font-family:'DM Sans',sans-serif;color:var(--text);transition:all .22s;text-align:left;line-height:1.35;font-weight:500;min-height:60px;display:flex;align-items:center;}
+.match-card:hover:not(.matched):not(.disabled){border-color:var(--leaf2);background:rgba(90,158,82,.06);}
+.match-card.selected{border-color:#3B82F6;background:rgba(59,130,246,.08);color:#3B82F6;}
+.match-card.matched{border-color:var(--correct);background:rgba(39,174,96,.1);color:var(--correct);cursor:default;animation:pop .35s ease;}
+.match-card.wrong{animation:shake .4s ease;border-color:var(--wrong);background:rgba(231,76,60,.08);}
+.match-card.disabled{opacity:.4;cursor:default;pointer-events:none;}
+.match-card .sci-text{font-family:'DM Mono',monospace;font-size:.78rem;color:var(--leaf2);}
+.match-card.matched .sci-text{color:var(--correct);}
+.match-card.selected .sci-text{color:#3B82F6;}
+.match-complete{text-align:center;padding:2rem 1.5rem;background:var(--surface);border-radius:var(--r-lg);border:2px solid var(--border);margin-top:1rem;display:none;animation:pageIn .35s ease;}
+.match-complete.visible{display:block;}
+.match-complete h3{font-family:'Playfair Display',serif;font-size:1.6rem;color:var(--soil);margin-bottom:.5rem;}
+[data-theme="dark"] .match-complete h3{color:var(--wheat);}
+.match-complete p{color:var(--muted);font-size:.9rem;}
+.match-actions{display:flex;gap:.6rem;justify-content:center;margin-top:1rem;flex-wrap:wrap;}
+
+/* ===== CONFETTI ===== */
+#confetti-container{position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:9999;overflow:hidden;}
+.confetti-piece{position:absolute;width:8px;height:8px;border-radius:1px;animation:confettiFall linear forwards;}
+@keyframes confettiFall{0%{transform:translateY(-20px) rotate(0deg);opacity:1}100%{transform:translateY(110vh) rotate(720deg);opacity:0}}
+
+/* ===== RESPONSIVE ===== */
+@media(max-width:768px){
+  .desktop-nav{display:none;}
+  .mobile-header{display:flex;}
+  .bottom-nav{display:block;}
+  main{padding-top:.75rem;}
+  .quiz-opts{grid-template-columns:1fr;}
+  .hero h1{font-size:1.65rem;}
+  .hero{padding:1.75rem 1rem 1.5rem;}
+  .flashcard{height:260px;}
+  .crops-grid{grid-template-columns:1fr;}
+  .crops-table th:nth-child(4),.crops-table td:nth-child(4){display:none;}
+  .match-card{font-size:.78rem;padding:.7rem .8rem;min-height:52px;}
+}
+@media(min-width:769px){
+  .modal-overlay{align-items:center;padding:1rem;}
+  .modal{border-radius:var(--r-lg);max-height:88vh;}
+  @keyframes slideUp{from{transform:scale(.95) translateY(10px);opacity:0}to{transform:scale(1) translateY(0);opacity:1}}
+}
+</style>
+</head>
+<body>
+
+<!-- DESKTOP NAV -->
+<nav class="desktop-nav">
+  <div class="logo">🌿 <span>CropSci</span></div>
+  <div class="tabs">
+    <div class="tab active" data-page="browse" onclick="showPage('browse',this)">📚 Browse</div>
+    <div class="tab" data-page="flashcard" onclick="showPage('flashcard',this)">🃏 Flashcards</div>
+    <div class="tab" data-page="quiz" onclick="showPage('quiz',this)">🧠 Quiz</div>
+    <div class="tab" data-page="families" onclick="showPage('families',this)">🌳 Families</div>
+    <div class="tab" data-page="match" onclick="showPage('match',this)">🎯 Match</div>
+  </div>
+  <div class="nav-right">
+    <div class="score-badge" id="score-badge">Score: 0</div>
+    <button class="dark-btn" onclick="toggleDark()" id="dark-btn-desk">🌙</button>
+  </div>
+</nav>
+
+<!-- MOBILE HEADER -->
+<div class="mobile-header">
+  <div class="mob-logo">🌿 <span>CropSci</span></div>
+  <div class="mob-right">
+    <div class="mob-score" id="mob-score">Score: 0</div>
+    <button class="mob-dark-btn" onclick="toggleDark()" id="dark-btn-mob">🌙</button>
+  </div>
+</div>
+
+<main>
+
+<!-- ===== BROWSE PAGE ===== -->
+<div class="page active" id="page-browse">
+  <div class="hero">
+    <h1>Learn Crops<br><em>Scientifically</em></h1>
+    <p>71 crops · Scientific names · Families · Memory tricks · Smart study tools</p>
+    <div class="stats-row">
+      <div class="stat"><strong id="stat-known">0</strong>Mastered</div>
+      <div class="stat"><strong>18</strong>Families</div>
+      <div class="stat"><strong>71</strong>Crops</div>
+      <div class="stat"><strong id="stat-streak">0🔥</strong>Streak</div>
+    </div>
+  </div>
+
+  <div class="progress-panel">
+    <div class="prog-ring-wrap">
+      <svg class="prog-ring" width="60" height="60" viewBox="0 0 60 60">
+        <circle class="track" cx="30" cy="30" r="24"/>
+        <circle class="fill" id="prog-circle" cx="30" cy="30" r="24" stroke-dasharray="150.8" stroke-dashoffset="150.8"/>
+      </svg>
+    </div>
+    <div class="prog-info">
+      <div class="prog-title" id="prog-title">0 / 71 Mastered</div>
+      <div class="prog-sub" id="prog-sub">Start marking crops as "Known" to track progress</div>
+    </div>
+    <div class="prog-actions">
+      <button class="weak-btn" onclick="toggleWeakPanel()">⚠️ Weak Spots</button>
+      <button class="reset-btn" onclick="resetProgress()">↺ Reset</button>
+    </div>
+  </div>
+
+  <div class="weak-panel" id="weak-panel">
+    <div class="weak-title">⚠️ Crops to Review (answered wrong most)</div>
+    <div class="weak-list" id="weak-list"></div>
+    <div style="font-size:.75rem;color:var(--muted);margin-top:.6rem;">Based on your quiz history · Tap a crop to review it</div>
+  </div>
+
+  <div class="controls">
+    <div class="search-wrap">
+      <input type="text" id="search-input" placeholder="Search crop, scientific name, family…" oninput="filterCrops()">
+    </div>
+    <div class="view-toggle">
+      <button class="view-btn active" id="view-card-btn" onclick="setView('card')" title="Card view">▦</button>
+      <button class="view-btn" id="view-table-btn" onclick="setView('table')" title="Table view">☰</button>
+    </div>
+  </div>
+  <div class="controls" id="cat-filters" style="margin-top:-.4rem;gap:.4rem;">
+    <button class="filter-btn active" onclick="setCat('all',this)">All</button>
+    <button class="filter-btn" onclick="setCat('cereal',this)">🌾 Cereals</button>
+    <button class="filter-btn" onclick="setCat('pulse',this)">🫘 Pulses</button>
+    <button class="filter-btn" onclick="setCat('oilseed',this)">🌻 Oilseeds</button>
+    <button class="filter-btn" onclick="setCat('cash',this)">💰 Cash</button>
+    <button class="filter-btn" onclick="setCat('fruit',this)">🍎 Fruits</button>
+    <button class="filter-btn" onclick="setCat('vegetable',this)">🥦 Vegs</button>
+    <button class="filter-btn" onclick="setCat('spice',this)">🌶 Spices</button>
+    <button class="filter-btn" onclick="setCat('flower',this)">🌸 Flowers</button>
+    <button class="filter-btn" onclick="setCat('medicinal',this)">🌿 Medicinal</button>
+  </div>
+  <div class="crops-grid" id="crops-grid"></div>
+  <table class="crops-table" id="crops-table">
+    <thead><tr><th>#</th><th>Crop</th><th>Scientific Name</th><th>Family</th><th>Category</th><th>✓</th></tr></thead>
+    <tbody id="crops-tbody"></tbody>
+  </table>
+  <div class="no-results" id="no-results" style="display:none"><span class="emoji">🌱</span>No crops found. Try a different search!</div>
+</div>
+
+<!-- ===== FLASHCARD PAGE ===== -->
+<div class="page" id="page-flashcard">
+  <div class="flashcard-wrap">
+    <div class="fc-header">
+      <h2>Flashcards</h2>
+      <p>Tap to flip · Swipe right ✓ Know it · Swipe left ↩ Review</p>
+    </div>
+    <div class="fc-mode-row">
+      <button class="fc-mode-btn active" onclick="setFcMode('name-to-sci',this)">Name → Sci</button>
+      <button class="fc-mode-btn" onclick="setFcMode('sci-to-name',this)">Sci → Name</button>
+      <button class="fc-mode-btn" onclick="setFcMode('name-to-fam',this)">Name → Family</button>
+      <button class="fc-mode-btn" onclick="setFcMode('weak-only',this)">⚠️ Weak Only</button>
+      <button class="fc-mode-btn" onclick="shuffleCards()">🔀 Shuffle</button>
+    </div>
+    <div class="fc-progress">
+      <div class="fc-prog-row">
+        <div class="fc-bar"><div class="fc-fill" id="fc-fill" style="width:0%"></div></div>
+        <div class="fc-count" id="fc-count">1 / 71</div>
+      </div>
+      <div class="fc-known-row">
+        <span><span class="dot"></span><span id="fc-known-count">0</span> known</span>
+        <span><span class="dot r"></span><span id="fc-review-count">0</span> reviewing</span>
+      </div>
+    </div>
+    <div class="flashcard" id="flashcard-el" onclick="handleFcTap(event)">
+      <div class="fc-inner" id="fc-inner">
+        <div class="fc-front" id="fc-front">
+          <div class="fc-cat-tag" id="fc-cat"></div>
+          <div class="fc-label" id="fc-label">Crop Name</div>
+          <div class="fc-question" id="fc-q">Loading…</div>
+          <div class="fc-hint">👆 Tap to reveal answer</div>
+          <div class="fc-swipe-hint">← Swipe to mark · Swipe → if you know it</div>
+        </div>
+        <div class="fc-back" id="fc-back">
+          <div class="fc-cat-tag-back" id="fc-cat-back"></div>
+          <div class="fc-sci" id="fc-ans1"></div>
+          <div class="fc-fam" id="fc-ans2"></div>
+          <div class="fc-nick" id="fc-ans3"></div>
+        </div>
+      </div>
+    </div>
+    <div class="fc-sr-buttons" id="fc-sr-btns">
+      <button class="fc-sr-btn review" onclick="markReview()">↩ Review Again</button>
+      <button class="fc-sr-btn know" onclick="markKnown()">✓ Know It!</button>
+    </div>
+    <div class="fc-controls">
+      <button class="fc-btn prev" onclick="fcNav(-1)">← Prev</button>
+      <button class="fc-btn next" onclick="fcNav(1)">Next →</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== QUIZ PAGE ===== -->
+<div class="page" id="page-quiz">
+  <div class="quiz-wrap">
+    <div class="quiz-header">
+      <h2>Quiz Mode</h2>
+      <div class="quiz-streak" id="quiz-streak" style="display:none">🔥 <span id="streak-count">0</span> streak</div>
+    </div>
+    <div id="quiz-container"></div>
+  </div>
+</div>
+
+<!-- ===== FAMILIES PAGE ===== -->
+<div class="page" id="page-families">
+  <h2 style="font-family:'Playfair Display',serif;font-size:1.7rem;color:var(--soil);margin-bottom:.35rem;">Plant Families</h2>
+  <p style="color:var(--muted);font-size:.88rem;margin-bottom:1.5rem;">Grouping crops by family makes memorisation 10× faster — tap to expand.</p>
+  <div id="families-list"></div>
+</div>
+
+<!-- ===== MATCH GAME PAGE ===== -->
+<div class="page" id="page-match">
+  <div class="match-wrap">
+    <div class="match-header">
+      <h2>🎯 Match Game</h2>
+      <p>Match each crop name to its scientific name. Tap a name, then tap its match.</p>
+    </div>
+    <div class="match-meta">
+      <div class="match-stat"><span id="m-matched">0/6</span>Matched</div>
+      <div class="match-stat"><span id="m-errors">0</span>Errors</div>
+      <div class="match-stat"><span id="m-timer">0:00</span>Time</div>
+    </div>
+    <div class="match-grid" id="match-grid"></div>
+    <div class="match-complete" id="match-complete">
+      <div style="font-size:2.5rem;margin-bottom:.5rem" id="match-emoji">🎉</div>
+      <h3 id="match-result-title">Round Complete!</h3>
+      <p id="match-result-sub"></p>
+      <div class="match-actions">
+        <button class="btn-primary" onclick="startMatch()">Next Round 🔄</button>
+        <button class="btn-primary" style="background:var(--earth)" onclick="startMatchCat()">Same Category</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+</main>
+
+<!-- MOBILE BOTTOM NAV -->
+<nav class="bottom-nav">
+  <div class="bottom-tabs">
+    <button class="bot-tab active" data-page="browse" onclick="showPage('browse',this)">
+      <span class="icon">📚</span><span class="label">Browse</span>
+    </button>
+    <button class="bot-tab" data-page="flashcard" onclick="showPage('flashcard',this)">
+      <span class="icon">🃏</span><span class="label">Flash</span>
+    </button>
+    <button class="bot-tab" data-page="quiz" onclick="showPage('quiz',this)">
+      <span class="icon">🧠</span><span class="label">Quiz</span>
+    </button>
+    <button class="bot-tab" data-page="families" onclick="showPage('families',this)">
+      <span class="icon">🌳</span><span class="label">Families</span>
+    </button>
+    <button class="bot-tab" data-page="match" onclick="showPage('match',this)">
+      <span class="icon">🎯</span><span class="label">Match</span>
+    </button>
+  </div>
+</nav>
+
+<!-- MODAL -->
+<div class="modal-overlay" id="modal-overlay" onclick="closeModal(event)">
+  <div class="modal" id="modal">
+    <div class="modal-handle"></div>
+    <button class="modal-close" onclick="closeModal()">✕</button>
+    <div id="modal-content"></div>
+  </div>
+</div>
+
+<!-- CONFETTI -->
+<div id="confetti-container"></div>
+
+<script>
+/* ===== DATA ===== */
+const CROPS = [
+  {no:1,name:"Paddy (Rice)",sci:"Oryza sativa",fam:"Poaceae",cat:"cereal",nicks:"Staff of Life, Gift of the Gods, Grain of the East",local:"Chawal (Hindi), Arisi (Tamil), Biyyam (Telugu)",mem:"'Oryza' = Greek for rice. Only crop grown in standing water. Poaceae = grass family."},
+  {no:2,name:"Wheat",sci:"Triticum aestivum",fam:"Poaceae",cat:"cereal",nicks:"Staff of Life, Bread of Life, King of Cereals",local:"Gehun (Hindi), Godhumai (Tamil), Goduma (Telugu)",mem:"'Triticum' from Latin 'terere' = to thresh. 'Aestivum' = of summer. Think: TriTHRESH wheat."},
+  {no:3,name:"Maize (Corn)",sci:"Zea mays",fam:"Poaceae",cat:"cereal",nicks:"Queen of Cereals, Mother Grain of Americas, Golden Crop",local:"Makka (Hindi), Cholam (Tamil), Mokka Jonna (Telugu)",mem:"'Zea' = Greek for grain. 'Mays' from Taino 'maiz'. Shortest scientific name to remember!"},
+  {no:4,name:"Sorghum (Jowar)",sci:"Sorghum bicolor",fam:"Poaceae",cat:"cereal",nicks:"King of Coarse Cereals, Great Millet",local:"Jowar (Hindi), Cholam (Tamil), Jonna (Telugu)",mem:"'Bicolor' = two colours (red and white varieties). Drought-resistant king."},
+  {no:5,name:"Pearl Millet (Bajra)",sci:"Pennisetum glaucum",fam:"Poaceae",cat:"cereal",nicks:"Poor Man's Food, Millet of the Desert",local:"Bajra (Hindi), Kambu (Tamil), Sajja (Telugu)",mem:"'Pennisetum' = feather bristle (penna=feather, seta=bristle). Looks like a bottle brush!"},
+  {no:6,name:"Finger Millet (Ragi)",sci:"Eleusine coracana",fam:"Poaceae",cat:"cereal",nicks:"Nutritious Grain, Calcium Wonder",local:"Ragi (Hindi), Kezhvaragu (Tamil), Ragi (Telugu)",mem:"'Eleusine' from Eleusis, Greece. 'Coracana' = crow-like (dark seeds). Think: CROW-calcium-ragi."},
+  {no:7,name:"Barley",sci:"Hordeum vulgare",fam:"Poaceae",cat:"cereal",nicks:"Ancient Grain, First Grain of Mankind",local:"Jau (Hindi), Barli (Tamil), Barleeelu (Telugu)",mem:"'Hordeum vulgare' = common barley. 'Vulgare' = common/ordinary. First grain brewed into beer!"},
+  {no:8,name:"Foxtail Millet",sci:"Setaria italica",fam:"Poaceae",cat:"cereal",nicks:"Famine Reserve Crop",local:"Kangni (Hindi), Thinai (Tamil), Korra (Telugu)",mem:"'Setaria' = bristle (Latin). Looks like a fox's tail! 'Italica' = from Italy."},
+  {no:9,name:"Little Millet",sci:"Panicum sumatrense",fam:"Poaceae",cat:"cereal",nicks:"Smart Food, Ancient Grain",local:"Kutki (Hindi), Samai (Tamil), Sama (Telugu)",mem:"'Sumatrense' = from Sumatra. Tiny but mighty — smallest millet grain."},
+  {no:10,name:"Kodo Millet",sci:"Paspalum scrobiculatum",fam:"Poaceae",cat:"cereal",nicks:"Grain of Endurance",local:"Kodon (Hindi), Varagu (Tamil), Arikelu (Telugu)",mem:"'Scrobiculatum' = pitted/grooved surface. Remember: SCRATCHED grain = Kodo."},
+  {no:11,name:"Barnyard Millet",sci:"Echinochloa species",fam:"Poaceae",cat:"cereal",nicks:"Sanwa, Japanese Millet",local:"Sanwa (Hindi), Kuthiraivali (Tamil), Udalu (Telugu)",mem:"'Echinochloa' = hedgehog grass (echinos=hedgehog, chloa=grass). Spiky!"},
+  {no:12,name:"Proso Millet",sci:"Panicum miliaceum",fam:"Poaceae",cat:"cereal",nicks:"Common Millet, Broom Corn Millet",local:"Barri (Hindi), Panivaragu (Tamil), Variga (Telugu)",mem:"'Miliaceum' = millet-like. Think: 'miliaceum' → millet. Easiest one!"},
+  {no:13,name:"Chickpea (Gram)",sci:"Cicer arietinum",fam:"Fabaceae",cat:"pulse",nicks:"King of Pulses, Garbanzo Bean",local:"Chana (Hindi), Kondakadalai (Tamil), Senagalu (Telugu)",mem:"'Cicer' = pea in Latin. 'Arietinum' = like a ram's head (seeds look like small rams!). Think: RAM-chickpea."},
+  {no:14,name:"Pea",sci:"Pisum sativum",fam:"Fabaceae",cat:"pulse",nicks:"Queen of Pulses, Garden Pea",local:"Matar (Hindi), Pattani (Tamil), Batani (Telugu)",mem:"'Pisum' = Latin for pea. 'Sativum' = cultivated. Mendel's famous genetics experiment plant!"},
+  {no:15,name:"Soybean",sci:"Glycine max",fam:"Fabaceae",cat:"pulse",nicks:"Wonder Crop, Poor Man's Meat, Miracle Bean",local:"Soyabean (Hindi), Soya (Tamil)",mem:"'Glycine' = sweet (Greek). 'Max' = largest (it IS the largest pulse crop!). Think: MAX sweet bean."},
+  {no:16,name:"Cowpea",sci:"Vigna unguiculata",fam:"Fabaceae",cat:"pulse",nicks:"Vegetable Meat, Black-eyed Pea",local:"Lobia (Hindi), Karamani (Tamil), Alasandalu (Telugu)",mem:"'Vigna' = after Italian botanist Domenico Vigni. 'Unguiculata' = small claws (tiny claw marks on seeds)."},
+  {no:17,name:"Pigeon Pea",sci:"Cajanus cajan",fam:"Fabaceae",cat:"pulse",nicks:"Split Pea, Red Gram, Arhar, Toor",local:"Arhar (Hindi), Thuvaram Paruppu (Tamil), Kandi Pappu (Telugu)",mem:"'Cajanus cajan' — same word twice! Easy to remember. Derived from Malay 'katjang' = bean."},
+  {no:18,name:"Groundnut",sci:"Arachis hypogaea",fam:"Fabaceae",cat:"oilseed",nicks:"King of Oilseeds, Goober, Earth Nut, Monkey Nut",local:"Moongphali (Hindi), Verkadalai (Tamil), Pallelu (Telugu)",mem:"'Hypogaea' = underground (hypo=under, gaea=earth). It literally buries its pods underground! HYPO=below ground."},
+  {no:19,name:"Sesame",sci:"Sesamum indicum",fam:"Pedaliaceae",cat:"oilseed",nicks:"Queen of Oilseeds, Til, Poor Man's Ghee",local:"Til (Hindi), Ellu (Tamil), Nuvvulu (Telugu)",mem:"'Sesamum' = Arabic 'simsim'. 'Indicum' = from India. 'Open Sesame!' — oldest oilseed in India."},
+  {no:20,name:"Mustard",sci:"Brassica juncea",fam:"Brassicaceae",cat:"oilseed",nicks:"King of Oilseeds (alternate), Rai, Sarson",local:"Sarson (Hindi), Kadugu (Tamil), Avalu (Telugu)",mem:"'Brassica' = Latin for cabbage. 'Juncea' = rush-like. Brassicaceae = mustard/cabbage family. Yellow flowers!"},
+  {no:21,name:"Sunflower",sci:"Helianthus annuus",fam:"Asteraceae",cat:"oilseed",nicks:"Flower of the Sun, Surajmukhi",local:"Surajmukhi (Hindi), Suryakanti (Tamil)",mem:"'Helianthus' = sun flower (helios=sun, anthos=flower). 'Annuus' = annual. Heliotropism — follows the sun!"},
+  {no:22,name:"Safflower",sci:"Carthamus tinctorius",fam:"Asteraceae",cat:"oilseed",nicks:"False Saffron, Dyer's Saffron, Kusum",local:"Kusum (Hindi), Kardai (Tamil)",mem:"'Tinctorius' = used for dyeing (tincture). Think: TINCTURE→DYE→Safflower. Used to make red/orange dye."},
+  {no:23,name:"Sugarcane",sci:"Saccharum officinarum",fam:"Poaceae",cat:"cash",nicks:"Sweet Cane, Noble Cane",local:"Ganna (Hindi), Karumbu (Tamil), Cheraku (Telugu)",mem:"'Saccharum' = sugar (Greek: sakcharon). 'Officinarum' = of the apothecary shop. SACCHARIN comes from this!"},
+  {no:24,name:"Cotton",sci:"Gossypium species",fam:"Malvaceae",cat:"cash",nicks:"White Gold, King Fiber",local:"Kapas (Hindi), Paruthi (Tamil), Panju (Telugu)",mem:"'Gossypium' from Arabic 'goz' = soft. Malvaceae = mallow family. WHITE GOLD fiber."},
+  {no:25,name:"Tobacco",sci:"Nicotiana tabacum",fam:"Solanaceae",cat:"cash",nicks:"Golden Leaf",local:"Tambaku (Hindi), Pugaiyilai (Tamil)",mem:"Named after Jean Nicot who introduced it to France. 'Tabacum' = from Taino 'tabako'. NICOT → NICOTINE!"},
+  {no:26,name:"Mango",sci:"Mangifera indica",fam:"Anacardiaceae",cat:"fruit",nicks:"King of Fruits, Alphonso=King of Mangoes",local:"Aam (Hindi), Mangai (Tamil), Mamidi (Telugu)",mem:"'Mangifera' = mango-bearer (mango + Latin: ferre=to bear). 'Indica' = from India. MANGO + BEARER = Mangifera!"},
+  {no:27,name:"Pineapple",sci:"Ananas comosus",fam:"Bromeliaceae",cat:"fruit",nicks:"Queen of Fruits, King of Tropical Fruits",local:"Ananas (Hindi), Annasi (Tamil)",mem:"'Ananas' from Tupi (Brazil) 'nanas' = excellent fruit. 'Comosus' = tufted (the leafy crown). CROWN fruit!"},
+  {no:28,name:"Banana",sci:"Musa species",fam:"Musaceae",cat:"fruit",nicks:"Oldest Cultivated Tropical Fruit, Fruit of Paradise",local:"Kela (Hindi), Vazhai (Tamil), Arati (Telugu)",mem:"'Musa' named after Antonio Musa, physician to Roman emperor Augustus. Think: MUSA = MUSIC of tropics."},
+  {no:29,name:"Apple",sci:"Malus domestica",fam:"Rosaceae",cat:"fruit",nicks:"King of Temperate Fruits, Forbidden Fruit",local:"Seb (Hindi), Apple (Tamil/Telugu)",mem:"'Malus' = apple in Latin. 'Domestica' = domesticated/home. Rosaceae = rose family (roses, apples related!)."},
+  {no:30,name:"Guava",sci:"Psidium guajava",fam:"Myrtaceae",cat:"fruit",nicks:"Poor Man's Fruit, Apple of the Tropics",local:"Amrud (Hindi), Koyyapazham (Tamil), Koyya (Telugu)",mem:"'Psidium' from Greek 'psidion' = pomegranate (similar look). 'Guajava' from Arawak native name. MYRTACEAE = eucalyptus family."},
+  {no:31,name:"Jackfruit",sci:"Artocarpus heterophyllus",fam:"Moraceae",cat:"fruit",nicks:"Poor Man's Fruit, Jack Tree",local:"Kathal (Hindi), Palappazham (Tamil), Panasa (Telugu)",mem:"'Artocarpus' = bread fruit (artos=bread, karpos=fruit). 'Heterophyllus' = varied leaves. World's largest tree fruit!"},
+  {no:32,name:"Ber (Jujube)",sci:"Ziziphus mauritiana",fam:"Rhamnaceae",cat:"fruit",nicks:"Indian Plum, Poor Man's Fruit",local:"Ber (Hindi), Ilanthai (Tamil), Regu (Telugu)",mem:"'Mauritiana' = from Mauritania (Africa). 'Ziziphus' from Arabic 'zizouf'. Indian plum for the poor."},
+  {no:33,name:"Grape",sci:"Vitis vinifera",fam:"Vitaceae",cat:"fruit",nicks:"Queen of Vines, Divine Fruit",local:"Angoor (Hindi), Draksha (Tamil/Telugu)",mem:"'Vitis' = vine. 'Vinifera' = wine-bearer (vinum=wine, ferre=bear). WINE + VINE = Vitis vinifera!"},
+  {no:34,name:"Pomegranate",sci:"Punica granatum",fam:"Lythraceae",cat:"fruit",nicks:"Fruit of Paradise, Jewel Fruit",local:"Anar (Hindi), Mathulai (Tamil), Danimma (Telugu)",mem:"'Punica' = from Carthage (Punics). 'Granatum' = seeded (granum=grain). PUNCHING SEEDS = Punica granatum!"},
+  {no:35,name:"Papaya",sci:"Carica papaya",fam:"Caricaceae",cat:"fruit",nicks:"Fruit of Angels, Melon Tree",local:"Papita (Hindi), Pappali (Tamil), Boppayi (Telugu)",mem:"'Carica' = from Caria, ancient region. 'Papaya' from Carib/Arawak 'papáia'. Columbus called it 'fruit of angels'!"},
+  {no:36,name:"Watermelon",sci:"Citrullus lanatus",fam:"Cucurbitaceae",cat:"fruit",nicks:"Summer's Sweet Gift, Desert King",local:"Tarbooj (Hindi), Thannirmoththai (Tamil)",mem:"'Citrullus' = small citrus (citrino=lemon-like). 'Lanatus' = woolly/hairy (the rind surface). WOOLLY CITRON!"},
+  {no:37,name:"Coconut",sci:"Cocos nucifera",fam:"Arecaceae",cat:"fruit",nicks:"Tree of Heaven, Kalpavriksha, Tree of Life",local:"Nariyal (Hindi), Thengai (Tamil), Kobbari (Telugu)",mem:"'Cocos' = Portuguese for grinning face (the 3 holes on shell look like a monkey face!). 'Nucifera' = nut-bearer."},
+  {no:38,name:"Litchi",sci:"Litchi chinensis",fam:"Sapindaceae",cat:"fruit",nicks:"Queen of Fruits (alternate), Fruit of the Emperor",local:"Litchi (Hindi), Lichu (Tamil)",mem:"'Chinensis' = from China. Chinese emperors prized it. CHINA + LYCHEE = easy!"},
+  {no:39,name:"Mangosteen",sci:"Garcinia mangostana",fam:"Clusiaceae",cat:"fruit",nicks:"Queen of Fruits (SE Asia), Purple Mangosteen",local:"Purple Mangosteen",mem:"Named after Laurent Garcin (French botanist). 'Mangostana' = mangosteen in Malay. Queen Victoria offered reward to bring fresh mangosteens!"},
+  {no:40,name:"Durian",sci:"Durio zibethinus",fam:"Malvaceae",cat:"fruit",nicks:"King of Fruits (SE Asia), The Smelly King",local:"The Smelly King",mem:"'Durio' = from Malay 'duri' = thorn/spike. 'Zibethinus' = civet-scented (like civet cat musk). THORNY CIVET KING!"},
+  {no:41,name:"Potato",sci:"Solanum tuberosum",fam:"Solanaceae",cat:"vegetable",nicks:"King of Vegetables, Poor Man's Friend",local:"Aloo (Hindi), Urulaikizhangu (Tamil), Bangaladumpa (Telugu)",mem:"'Solanum' = soothing (Latin). 'Tuberosum' = tuberous/swollen. Solanaceae = nightshade family (tomato, brinjal, chilli all related!)."},
+  {no:42,name:"Okra (Bhindi)",sci:"Abelmoschus esculentus",fam:"Malvaceae",cat:"vegetable",nicks:"Queen of Vegetables, Lady's Finger",local:"Bhindi (Hindi), Vendakkai (Tamil), Bendakaya (Telugu)",mem:"'Abelmoschus' = Arabic 'abu-l-mosk' = father of musk (musky smell). 'Esculentus' = edible. ABU MUSK FINGER!"},
+  {no:43,name:"Tomato",sci:"Solanum lycopersicum",fam:"Solanaceae",cat:"vegetable",nicks:"Poor Man's Orange, Love Apple",local:"Tamatar (Hindi), Thakkali (Tamil), Tamata (Telugu)",mem:"'Lycopersicum' = wolf peach (lyco=wolf, persicum=peach). Europeans feared it was poisonous like a wolf! WOLF PEACH!"},
+  {no:44,name:"Onion",sci:"Allium cepa",fam:"Amaryllidaceae",cat:"vegetable",nicks:"Queen of Kitchen, Bulb of Life",local:"Pyaz (Hindi), Vengayam (Tamil), Ullipaya (Telugu)",mem:"'Allium' = Latin for garlic/onion. 'Cepa' = onion in Latin. Allium family includes garlic, onion, leek — all make you cry!"},
+  {no:45,name:"Brinjal (Eggplant)",sci:"Solanum melongena",fam:"Solanaceae",cat:"vegetable",nicks:"King of Vegetables (in some regions)",local:"Baingan (Hindi), Kathirikai (Tamil), Vankaya (Telugu)",mem:"'Melongena' from Greek 'melon' = apple + 'gena' = origin. 'Apple of origin' — one of oldest cultivated vegetables!"},
+  {no:46,name:"Cauliflower",sci:"Brassica oleracea var. botrytis",fam:"Brassicaceae",cat:"vegetable",nicks:"Crown Flower, Cabbage Flower",local:"Phool Gobi (Hindi), Cauliflower (Tamil)",mem:"'Oleracea' = vegetable garden (Latin). 'Botrytis' = grape cluster (the white head looks like clusters!). GRAPE CLUSTER CABBAGE."},
+  {no:47,name:"Cabbage",sci:"Brassica oleracea var. capitata",fam:"Brassicaceae",cat:"vegetable",nicks:"Head Cabbage",local:"Patta Gobi (Hindi), Muttaikose (Tamil)",mem:"'Capitata' = head-forming (caput=head). Same species as cauliflower, broccoli, kale — ALL are Brassica oleracea varieties!"},
+  {no:48,name:"Black Pepper",sci:"Piper nigrum",fam:"Piperaceae",cat:"spice",nicks:"King of Spices, Black Gold",local:"Kali Mirch (Hindi), Milagu (Tamil), Miriyalu (Telugu)",mem:"'Piper' = Latin for pepper. 'Nigrum' = black. PIPERACEAE family named after it. So simple: PIPER NIGRUM = BLACK PEPPER!"},
+  {no:49,name:"Cardamom",sci:"Elettaria cardamomum",fam:"Zingiberaceae",cat:"spice",nicks:"Queen of Spices, Green Gold",local:"Elaichi (Hindi), Elakkai (Tamil), Elakulu (Telugu)",mem:"'Elettaria' from Malayalam 'elattari' = cardamom. Named after ITS OWN local name! Zingiberaceae = ginger family."},
+  {no:50,name:"Turmeric",sci:"Curcuma longa",fam:"Zingiberaceae",cat:"spice",nicks:"Golden Spice, Indian Saffron, Holy Powder",local:"Haldi (Hindi), Manjal (Tamil), Pasupu (Telugu)",mem:"'Curcuma' from Arabic 'kurkum' = saffron (yellow colour). 'Longa' = long (rhizome). LONG YELLOW RHIZOME!"},
+  {no:51,name:"Ginger",sci:"Zingiber officinale",fam:"Zingiberaceae",cat:"spice",nicks:"Universal Medicine, Root of Life",local:"Adrak (Hindi), Inji (Tamil), Allam (Telugu)",mem:"'Zingiber' from Sanskrit 'shringavera'. ZINGIBERACEAE family named after ginger itself! Root of all spice families."},
+  {no:52,name:"Cumin",sci:"Cuminum cyminum",fam:"Apiaceae",cat:"spice",nicks:"Seed of Blessing",local:"Jeera (Hindi), Jeerakam (Tamil), Jeelakarra (Telugu)",mem:"'Cuminum cyminum' — almost same word repeated! From Greek 'kyminon'. Think: CYM-CUMIN = easy to remember!"},
+  {no:53,name:"Coriander",sci:"Coriandrum sativum",fam:"Apiaceae",cat:"spice",nicks:"Chinese Parsley, Dhania",local:"Dhania (Hindi), Kotthamalli (Tamil), Dhaniyalu (Telugu)",mem:"'Coriandrum' from Greek 'koris' = bedbug (unripe seeds smell like bugs!). 'Sativum' = cultivated. BUG-SCENTED seed!"},
+  {no:54,name:"Clove",sci:"Syzygium aromaticum",fam:"Myrtaceae",cat:"spice",nicks:"Nail Spice, Flower Bud Spice",local:"Laung (Hindi), Kirambu (Tamil), Lavangalu (Telugu)",mem:"'Syzygium' = joined (Greek, paired leaves). 'Aromaticum' = aromatic. AROMATIC JOINED BUDS. French 'clou' = nail (shape)."},
+  {no:55,name:"Cinnamon",sci:"Cinnamomum verum",fam:"Lauraceae",cat:"spice",nicks:"Sweet Wood, Ceylon Cinnamon",local:"Dalchini (Hindi), Pattai (Tamil), Dalchina Chekka (Telugu)",mem:"'Cinnamomum' from Greek/Hebrew 'qinnamon'. 'Verum' = TRUE/real. TRUE cinnamon from Sri Lanka. VERUM = VERIFIED REAL!"},
+  {no:56,name:"Nutmeg",sci:"Myristica fragrans",fam:"Myristicaceae",cat:"spice",nicks:"Spice Island Treasure",local:"Jaiphal (Hindi), Jaathikai (Tamil)",mem:"'Myristica' from Greek 'myron' = perfume/ointment. 'Fragrans' = fragrant. FRAGRANT PERFUME NUT!"},
+  {no:57,name:"Rose",sci:"Rosa species",fam:"Rosaceae",cat:"flower",nicks:"Queen of Flowers",local:"Gulab (Hindi), Roja (Tamil), Gulabi (Telugu)",mem:"'Rosa' = Latin for rose. Rosaceae family NAMED after rose. Simplest one — ROSA = ROSE!"},
+  {no:58,name:"Marigold",sci:"Tagetes species",fam:"Asteraceae",cat:"flower",nicks:"Herb of the Sun, Summer's Bride",local:"Genda (Hindi), Thulukka Malli (Tamil), Banthi (Telugu)",mem:"Named after Tages, Etruscan deity. Asteraceae = daisy/composite flower family. SUN DEITY FLOWER!"},
+  {no:59,name:"Jasmine",sci:"Jasminum species",fam:"Oleaceae",cat:"flower",nicks:"Queen of Fragrance, Moonlight of the Grove",local:"Chameli (Hindi), Malli (Tamil), Malle (Telugu)",mem:"'Jasminum' from Persian 'yasmin' = gift from God. Oleaceae = olive family (olive, jasmine, lilac related!)."},
+  {no:60,name:"Lotus",sci:"Nelumbo nucifera",fam:"Nelumbonaceae",cat:"flower",nicks:"Sacred Flower, Divine Flower",local:"Kamal (Hindi), Thamarai (Tamil), Tamara (Telugu)",mem:"'Nelumbo' from Sinhalese 'nelum' = lotus. 'Nucifera' = nut-bearing (produces edible seeds). NATIONAL FLOWER OF INDIA!"},
+  {no:61,name:"Chrysanthemum",sci:"Chrysanthemum species",fam:"Asteraceae",cat:"flower",nicks:"Glory of East, Queen of Fall, Golden Flower",local:"Guldaudi (Hindi), Samanthi (Tamil)",mem:"'Chrysanthemum' = golden flower (chrysos=gold, anthemon=flower). GOLDEN FLOWER in Greek. National flower of Japan!"},
+  {no:62,name:"Tuberose",sci:"Polianthes tuberosa",fam:"Asparagaceae",cat:"flower",nicks:"Mistress of the Night, Queen of Fragrance",local:"Rajnigandha (Hindi), Sampangi (Tamil)",mem:"'Tuberosa' = tuberous (bulb-like). 'Polianthes' = many flowers (polios=many, anthos=flower). NIGHT QUEEN with many flowers!"},
+  {no:63,name:"Orchid",sci:"Orchidaceae family",fam:"Orchidaceae",cat:"flower",nicks:"Jewel of the Plant Kingdom",local:"Orkid (Hindi)",mem:"'Orchis' = Greek for testicle (root bulbs shape!). Largest plant family on Earth — 25,000+ species. LARGEST JEWEL FAMILY!"},
+  {no:64,name:"Carnation",sci:"Dianthus caryophyllus",fam:"Caryophyllaceae",cat:"flower",nicks:"Jove's Flower, Flower of the Gods",local:"Carnation",mem:"'Dianthus' = divine flower (dios=divine/Zeus, anthos=flower). 'Caryophyllus' = clove-like. JUPITER'S CLOVE FLOWER!"},
+  {no:65,name:"Berseem (Egyptian Clover)",sci:"Trifolium alexandrinum",fam:"Fabaceae",cat:"fodder",nicks:"King of Fodder Crops",local:"Berseem (Hindi), Rifai (Arabic)",mem:"'Trifolium' = three-leafed (tri=three, folium=leaf). 'Alexandrinum' = from Alexandria, Egypt. THREE LEAF EGYPTIAN CLOVER!"},
+  {no:66,name:"Lucerne (Alfalfa)",sci:"Medicago sativa",fam:"Fabaceae",cat:"fodder",nicks:"Queen of Fodder Crops, Father of All Foods",local:"Lucerne (Hindi), Alfalfa",mem:"'Medicago' = from Media (ancient Persia). 'Sativa' = cultivated. 'Alfalfa' from Arabic 'al-fisfisa' = best fodder. PERSIAN QUEEN!"},
+  {no:67,name:"Tea",sci:"Camellia sinensis",fam:"Theaceae",cat:"beverage",nicks:"Queen of Beverages, Liquid Wisdom",local:"Chai (Hindi), Theneer (Tamil), Teyaaku (Telugu)",mem:"'Camellia' named after Georg Kamel (Jesuit botanist). 'Sinensis' = from China. JESUIT'S CHINESE LEAF!"},
+  {no:68,name:"Coffee",sci:"Coffea species",fam:"Rubiaceae",cat:"beverage",nicks:"King of Beverages, Black Gold, Black Medicine",local:"Coffee (Hindi), Kaapi (Tamil)",mem:"'Coffea' from Arabic 'qahwa' → Turkish 'kahve' → English 'coffee'. Rubiaceae = madder family. ARABIC KING!"},
+  {no:69,name:"Neem",sci:"Azadirachta indica",fam:"Meliaceae",cat:"medicinal",nicks:"Wonder Tree, Divine Tree, Village Pharmacy",local:"Neem (Hindi), Vembu (Tamil), Vepa (Telugu)",mem:"'Azadirachta' from Persian 'azad-darakht-i-hind' = free tree of India. 'Indica' = Indian. FREE DIVINE INDIAN TREE!"},
+  {no:70,name:"Tulsi (Holy Basil)",sci:"Ocimum tenuiflorum",fam:"Lamiaceae",cat:"medicinal",nicks:"Queen of Herbs, Sacred Plant, Mother Medicine of Nature",local:"Tulsi (Hindi), Thulasi (Tamil), Tulasi (Telugu)",mem:"'Ocimum' from Greek 'okimon' = basil. 'Tenuiflorum' = thin-flowered. THIN FLOWER SACRED BASIL!"},
+  {no:71,name:"Aloe Vera",sci:"Aloe barbadensis",fam:"Asphodelaceae",cat:"medicinal",nicks:"Plant of Immortality, Miracle Plant",local:"Ghritkumari (Hindi), Kathalai (Tamil)",mem:"'Barbadensis' = from Barbados (Caribbean). 'Aloe' from Arabic 'alloeh' = shiny bitter substance. SHINY BARBADOS IMMORTAL PLANT!"},
+];
+
+const FAMILIES = {
+  "Poaceae":{desc:"Grass family — all cereals belong here",fact:"KEY TRICK: If it's a cereal, it's Poaceae (Gramineae). All grasses have hollow stems, parallel leaves, and spikelets."},
+  "Fabaceae":{desc:"Legume/Pulse family — nitrogen-fixing plants with pods",fact:"KEY TRICK: All pulses (dal) = Fabaceae. Root nodules fix nitrogen = natural fertiliser. Butterfly-shaped flowers."},
+  "Solanaceae":{desc:"Nightshade family — many are poisonous in wild form",fact:"KEY TRICK: POTTS mnemonic — Potato, Tomato, Tobacco, Sweet pepper. All have bell-shaped flowers."},
+  "Brassicaceae":{desc:"Mustard/Crucifer family — 4-petalled cross-shaped flowers",fact:"KEY TRICK: Cross-shaped (cruciform) flowers with 4 petals. All are Brassica oleracea varieties except mustard!"},
+  "Asteraceae":{desc:"Composite/Daisy family — each 'flower' is actually hundreds of tiny florets",fact:"KEY TRICK: What looks like one flower is actually hundreds! Each petal = one floret. Largest flowering plant family."},
+  "Rosaceae":{desc:"Rose family — fleshy fruits and 5-petalled flowers",fact:"KEY TRICK: 5 petals + fleshy fruit = Rosaceae. Includes apple, pear, peach, strawberry, almond, rose!"},
+  "Myrtaceae":{desc:"Myrtle family — aromatic plants with oil glands in leaves",fact:"KEY TRICK: Crush the leaf and smell aromatic oil = Myrtaceae. Includes eucalyptus, guava, clove, bottlebrush."},
+  "Anacardiaceae":{desc:"Cashew family — many cause skin allergies (urushiol)",fact:"KEY TRICK: Mango, cashew, pistachio, poison ivy ALL in same family! Allergic skin reaction from latex."},
+  "Zingiberaceae":{desc:"Ginger family — aromatic rhizomes, tropical herbs",fact:"KEY TRICK: GCT mnemonic — Ginger, Cardamom, Turmeric = Zingiberaceae. All have aromatic underground rhizomes!"},
+  "Cucurbitaceae":{desc:"Gourd family — climbing/trailing vines with tendrils",fact:"KEY TRICK: Tendrils + Gourd = Cucurbitaceae. Cucumber, pumpkin, bottle gourd, watermelon all here."},
+  "Malvaceae":{desc:"Mallow family — mucilaginous (slimy) plants, 5 petals",fact:"KEY TRICK: STICKY/SLIMY = Malvaceae. Okra's sliminess, cotton's soft fibres. Hibiscus is the family representative."},
+  "Pedaliaceae":{desc:"Sesame family — small tropical/subtropical herbs",fact:"KEY TRICK: Only important crop = Sesame. Capsule fruits that explode (Open Sesame!). Found in hot dry areas."},
+  "Piperaceae":{desc:"Pepper family — tropical climbing plants with pungent taste",fact:"KEY TRICK: Only important crop = Black Pepper. Climbing vine with jointed stems. ENTIRE FAMILY named after pepper!"},
+  "Apiaceae":{desc:"Carrot/Umbrella family — umbrella-shaped flower clusters",fact:"KEY TRICK: Umbrella-shaped flowers (umbels) = Apiaceae. Includes carrot, coriander, cumin, fennel, celery."},
+  "Arecaceae":{desc:"Palm family — monocots with a single terminal bud",fact:"KEY TRICK: Tall unbranched trunk + feathery leaves = Arecaceae (Palm family). Date palm, coconut, betel nut all here."},
+  "Lauraceae":{desc:"Laurel/Cinnamon family — aromatic evergreen trees",fact:"KEY TRICK: Bay leaf, cinnamon, avocado, camphor = Lauraceae. Aromatic bark and leaves with essential oils."},
+  "Theaceae":{desc:"Tea family — evergreen shrubs with white flowers",fact:"KEY TRICK: Only crop = Tea (Camellia sinensis). Camellias in your garden are in the same family!"},
+  "Rubiaceae":{desc:"Coffee/Madder family — opposite leaves with stipules",fact:"KEY TRICK: Coffee, quinine (malaria medicine), gardenia = Rubiaceae. Famous for the medicine connection!"},
+};
+
+/* ===== STATE ===== */
+let currentCat = 'all';
+let currentView = 'card';
+let fcIndex = 0;
+let fcMode = 'name-to-sci';
+let fcOrder = CROPS.map((_,i)=>i);
+let fcFlipped = false;
+let quizScore = 0;
+let totalScore = 0;
+let quizCurrent = 0;
+let quizQuestions = [];
+let quizAnswered = false;
+let quizTimer = null;
+let quizTimeLeft = 15;
+let quizStreak = 0;
+let quizBestStreak = 0;
+let matchState = {crops:[],selectedName:null,selectedSci:null,matched:[],errors:0,startTime:null,timer:null,cat:null};
+
+/* ===== PROGRESS (localStorage) ===== */
+const STORAGE_KEY = 'cropsci_v2';
+function loadProg() {
+  try { return JSON.parse(localStorage.getItem(STORAGE_KEY)) || {known:[],reviewing:[],quizHistory:[],totalScore:0,streak:0}; }
+  catch { return {known:[],reviewing:[],quizHistory:[],totalScore:0,streak:0}; }
+}
+function saveProg(p) { try { localStorage.setItem(STORAGE_KEY,JSON.stringify(p)); } catch{} }
+
+function markCropKnown(no) {
+  const p = loadProg();
+  if (!p.known.includes(no)) p.known.push(no);
+  p.reviewing = p.reviewing.filter(x=>x!==no);
+  saveProg(p);
+  updateProgressUI();
+}
+function markCropReview(no) {
+  const p = loadProg();
+  if (!p.reviewing.includes(no)) p.reviewing.push(no);
+  p.known = p.known.filter(x=>x!==no);
+  saveProg(p);
+  updateProgressUI();
+}
+function resetProgress() {
+  if (!confirm('Reset all progress?')) return;
+  saveProg({known:[],reviewing:[],quizHistory:[],totalScore:0,streak:0});
+  totalScore = 0; quizStreak = 0;
+  updateProgressUI();
+  renderGrid();
+  renderFlashcard();
+}
+function isCropKnown(no) { return loadProg().known.includes(no); }
+
+function updateProgressUI() {
+  const p = loadProg();
+  const known = p.known.length;
+  const total = CROPS.length;
+  const pct = total ? Math.round(known/total*100) : 0;
+  const circ = 150.8;
+  const offset = circ - (circ * pct / 100);
+  const el = document.getElementById('prog-circle');
+  if (el) el.style.strokeDashoffset = offset;
+  const pt = document.getElementById('prog-title');
+  if (pt) pt.textContent = `${known} / ${total} Mastered`;
+  const ps = document.getElementById('prog-sub');
+  if (ps) ps.textContent = pct >= 80 ? '🏆 Excellent progress!' : pct >= 50 ? '🌱 Halfway there — keep going!' : 'Start marking crops as "Known" to track progress';
+  const sknown = document.getElementById('stat-known');
+  if (sknown) sknown.textContent = known;
+  const sstr = document.getElementById('stat-streak');
+  if (sstr) sstr.textContent = quizBestStreak + '🔥';
+  // Update fc counters
+  const fcK = document.getElementById('fc-known-count');
+  const fcR = document.getElementById('fc-review-count');
+  if (fcK) fcK.textContent = known;
+  if (fcR) fcR.textContent = p.reviewing.length;
+}
+
+function getWeakSpots() {
+  const p = loadProg();
+  const wrongs = {};
+  p.quizHistory.forEach(h => { if (!h.correct) wrongs[h.no] = (wrongs[h.no]||0)+1; });
+  return CROPS.filter(c => wrongs[c.no] >= 1)
+    .sort((a,b)=>(wrongs[b.no]||0)-(wrongs[a.no]||0))
+    .slice(0,8);
+}
+
+function toggleWeakPanel() {
+  const panel = document.getElementById('weak-panel');
+  const spots = getWeakSpots();
+  if (!spots.length) { alert('No weak spots yet! Take the quiz first.'); return; }
+  const list = document.getElementById('weak-list');
+  list.innerHTML = spots.map(c => `<div class="weak-pill" onclick="openModal(CROPS.find(x=>x.no===${c.no}))"><strong>${(getWeakSpots().find(x=>x.no===c.no)?'❌ ':'')}</strong>${c.name}<span style="font-family:'DM Mono',monospace;font-size:.7rem;color:var(--muted);display:block">${c.sci}</span></div>`).join('');
+  panel.classList.toggle('visible');
+}
+
+/* ===== DARK MODE ===== */
+function toggleDark() {
+  const dark = document.documentElement.getAttribute('data-theme') === 'dark';
+  document.documentElement.setAttribute('data-theme', dark ? 'light' : 'dark');
+  const icon = dark ? '🌙' : '☀️';
+  document.getElementById('dark-btn-desk').textContent = icon;
+  document.getElementById('dark-btn-mob').textContent = icon;
+  try { localStorage.setItem('cropsci_theme', dark ? 'light' : 'dark'); } catch{}
+}
+
+/* ===== NAVIGATION ===== */
+function showPage(p, el) {
+  document.querySelectorAll('.page').forEach(x=>x.classList.remove('active'));
+  document.querySelectorAll('.tab,.bot-tab').forEach(x=>x.classList.remove('active'));
+  document.getElementById('page-'+p).classList.add('active');
+  document.querySelectorAll('[data-page="'+p+'"]').forEach(x=>x.classList.add('active'));
+  if (p==='flashcard') renderFlashcard();
+  if (p==='quiz') startQuiz();
+  if (p==='families') renderFamilies();
+  if (p==='match') startMatch();
+}
+
+/* ===== BROWSE ===== */
+function renderGrid() {
+  const q = (document.getElementById('search-input')||{}).value?.toLowerCase() || '';
+  const grid = document.getElementById('crops-grid');
+  const tbody = document.getElementById('crops-tbody');
+  const noRes = document.getElementById('no-results');
+  let shown = 0;
+  grid.innerHTML = '';
+  tbody.innerHTML = '';
+  const p = loadProg();
+
+  CROPS.forEach((c,idx) => {
+    if (currentCat !== 'all' && c.cat !== currentCat) return;
+    if (q && !c.name.toLowerCase().includes(q) && !c.sci.toLowerCase().includes(q) && !c.fam.toLowerCase().includes(q) && !c.nicks.toLowerCase().includes(q) && !c.local?.toLowerCase().includes(q)) return;
+    shown++;
+    const isKnown = p.known.includes(c.no);
+
+    // Card
+    const d = document.createElement('div');
+    d.className = 'crop-card' + (isKnown ? ' is-known' : '');
+    d.dataset.cat = c.cat;
+    d.style.animationDelay = (shown * 0.04) + 's';
+    d.innerHTML = `<span class="crop-no">#${c.no}</span><div class="crop-cat">${c.cat.toUpperCase()}</div><div class="crop-name">${c.name}</div><div class="crop-sci">${c.sci}</div><div class="crop-fam">Family: ${c.fam}</div><div class="crop-nick">${c.nicks.split(',').slice(0,2).join(' · ')}</div><span class="known-badge">✓ Known</span>`;
+    d.onclick = () => openModal(c);
+    grid.appendChild(d);
+
+    // Table row
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td style="color:var(--muted);font-family:'DM Mono',monospace;font-size:.75rem">${c.no}</td><td class="td-name">${c.name}</td><td class="td-sci">${c.sci}</td><td>${c.fam}</td><td><span class="td-cat">${c.cat}</span></td><td class="td-known">${isKnown?'✓':''}</td>`;
+    tr.onclick = () => openModal(c);
+    tbody.appendChild(tr);
+  });
+
+  noRes.style.display = shown === 0 ? 'block' : 'none';
+}
+
+function filterCrops() { renderGrid(); }
+function setCat(cat, btn) {
+  currentCat = cat;
+  document.querySelectorAll('.filter-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  renderGrid();
+}
+function setView(v) {
+  currentView = v;
+  document.getElementById('view-card-btn').classList.toggle('active', v==='card');
+  document.getElementById('view-table-btn').classList.toggle('active', v==='table');
+  document.getElementById('crops-grid').classList.toggle('hidden', v==='table');
+  document.getElementById('crops-table').classList.toggle('visible', v==='table');
+}
+
+/* ===== MODAL ===== */
+function openModal(c) {
+  const fam = FAMILIES[c.fam] || {};
+  const p = loadProg();
+  const isKnown = p.known.includes(c.no);
+  const isReview = p.reviewing.includes(c.no);
+  document.getElementById('modal-content').innerHTML = `
+    <span class="modal-cat-tag">${c.cat.toUpperCase()}</span>
+    <h2>${c.name}</h2>
+    <div class="modal-sci">${c.sci}</div>
+    <div class="modal-fam">Family: <strong>${c.fam}</strong>${fam.desc ? ' — '+fam.desc : ''}</div>
+    <div class="info-row"><span class="info-label">Nicknames</span><span class="info-val">${c.nicks}</span></div>
+    <div class="info-row"><span class="info-label">Local Names</span><span class="info-val">${c.local||'—'}</span></div>
+    ${fam.fact ? `<div class="info-row"><span class="info-label">Family Tip</span><span class="info-val">${fam.fact}</span></div>` : ''}
+    <div class="mem-tip"><h4>🧠 Memory Trick</h4><p>${c.mem}</p></div>
+    <div class="modal-known-row">
+      <button class="modal-mark-btn know ${isKnown?'active':''}" onclick="markCropKnown(${c.no});this.classList.add('active');this.closest('.modal-overlay').querySelectorAll('.review')[0].classList.remove('active');renderGrid();">✓ I Know This</button>
+      <button class="modal-mark-btn review ${isReview?'active':''}" onclick="markCropReview(${c.no});this.classList.add('active');this.closest('.modal-overlay').querySelectorAll('.know')[0].classList.remove('active');renderGrid();">↩ Review Later</button>
+    </div>
+  `;
+  document.getElementById('modal-overlay').classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+function closeModal(e) {
+  if (!e || e.target === document.getElementById('modal-overlay')) {
+    document.getElementById('modal-overlay').classList.remove('open');
+    document.body.style.overflow = '';
+  }
+}
+
+/* ===== FLASHCARD ===== */
+function setFcMode(mode, btn) {
+  fcMode = mode;
+  document.querySelectorAll('.fc-mode-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  if (mode === 'weak-only') {
+    const p = loadProg();
+    const reviewing = p.reviewing;
+    if (!reviewing.length) { alert('No crops marked for review yet!'); return; }
+    fcOrder = CROPS.filter(c=>reviewing.includes(c.no)).map((_,i)=>CROPS.indexOf(CROPS.filter(c=>reviewing.includes(c.no))[i]));
+  } else {
+    fcOrder = CROPS.map((_,i)=>i);
+  }
+  fcIndex = 0;
+  resetFlip();
+  renderFlashcard();
+}
+function shuffleCards() {
+  for (let i=fcOrder.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[fcOrder[i],fcOrder[j]]=[fcOrder[j],fcOrder[i]];}
+  fcIndex=0; resetFlip(); renderFlashcard();
+}
+function resetFlip() {
+  fcFlipped = false;
+  const inner = document.getElementById('fc-inner');
+  if (inner) inner.classList.remove('flipped');
+  const sr = document.getElementById('fc-sr-btns');
+  if (sr) sr.classList.remove('visible');
+}
+function renderFlashcard() {
+  if (!fcOrder.length) return;
+  const c = CROPS[fcOrder[fcIndex % fcOrder.length]];
+  const fill = Math.round((fcIndex+1)/fcOrder.length*100);
+  document.getElementById('fc-fill').style.width = fill+'%';
+  document.getElementById('fc-count').textContent = `${fcIndex+1} / ${fcOrder.length}`;
+  let q='',a1='',a2='',a3='';
+  if (fcMode==='name-to-sci'||fcMode==='weak-only') {
+    document.getElementById('fc-label').textContent='Crop Name';
+    q=c.name; a1=c.sci; a2='Family: '+c.fam; a3=c.nicks.split(',')[0];
+  } else if (fcMode==='sci-to-name') {
+    document.getElementById('fc-label').textContent='Scientific Name';
+    q=c.sci; a1=c.name; a2='Family: '+c.fam; a3=c.nicks.split(',')[0];
+  } else {
+    document.getElementById('fc-label').textContent='Crop Name';
+    q=c.name; a1='Family: '+c.fam; a2=c.sci; a3=c.nicks.split(',')[0];
+  }
+  document.getElementById('fc-q').textContent=q;
+  document.getElementById('fc-ans1').textContent=a1;
+  document.getElementById('fc-ans2').textContent=a2;
+  document.getElementById('fc-ans3').textContent='★ '+a3;
+  const catEl = document.getElementById('fc-cat');
+  const catBack = document.getElementById('fc-cat-back');
+  if (catEl) catEl.textContent = c.cat.toUpperCase();
+  if (catBack) catBack.textContent = c.cat.toUpperCase();
+  updateProgressUI();
+}
+function handleFcTap(e) {
+  const rect = document.getElementById('flashcard-el').getBoundingClientRect();
+  const x = (e.clientX || e.changedTouches?.[0]?.clientX || 0) - rect.left;
+  flipCard();
+}
+function flipCard() {
+  const inner = document.getElementById('fc-inner');
+  fcFlipped = !fcFlipped;
+  inner.classList.toggle('flipped', fcFlipped);
+  const sr = document.getElementById('fc-sr-btns');
+  if (sr) sr.classList.toggle('visible', fcFlipped);
+}
+function markKnown() {
+  const c = CROPS[fcOrder[fcIndex % fcOrder.length]];
+  markCropKnown(c.no);
+  fcNav(1);
+}
+function markReview() {
+  const c = CROPS[fcOrder[fcIndex % fcOrder.length]];
+  markCropReview(c.no);
+  fcNav(1);
+}
+function fcNav(dir) {
+  fcIndex = (fcIndex + dir + fcOrder.length) % fcOrder.length;
+  resetFlip();
+  renderFlashcard();
+}
+
+/* Touch swipe on flashcard */
+let touchSX=0, touchSY=0, touchActive=false;
+document.addEventListener('DOMContentLoaded', () => {
+  const fc = document.getElementById('flashcard-el');
+  if (!fc) return;
+  fc.addEventListener('touchstart', e => {
+    touchSX = e.touches[0].clientX;
+    touchSY = e.touches[0].clientY;
+    touchActive = true;
+  }, {passive:true});
+  fc.addEventListener('touchend', e => {
+    if (!touchActive) return;
+    touchActive = false;
+    const dx = e.changedTouches[0].clientX - touchSX;
+    const dy = e.changedTouches[0].clientY - touchSY;
+    if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy)) {
+      if (dx > 0) { markKnown(); } else { markReview(); }
+    } else if (Math.abs(dx) < 15 && Math.abs(dy) < 15) {
+      flipCard();
+    }
+  }, {passive:true});
+});
+
+/* ===== QUIZ ===== */
+function startQuiz() {
+  quizScore=0; quizCurrent=0; quizAnswered=false; quizStreak=0;
+  if (quizTimer) clearInterval(quizTimer);
+  quizQuestions = generateQuestions(15);
+  renderQuestion();
+  updateStreakBadge();
+}
+function generateQuestions(n) {
+  const qs=[];
+  const shuffled=[...CROPS].sort(()=>Math.random()-.5);
+  for(let i=0;i<Math.min(n,shuffled.length);i++){
+    const c=shuffled[i];
+    const type=['sci','fam','nick'][Math.floor(Math.random()*3)];
+    let question='',correct='',opts=[];
+    if(type==='sci'){
+      question=`What is the scientific name of <strong>${c.name}</strong>?`;
+      correct=c.sci;
+      opts=[c.sci,...CROPS.filter(x=>x!==c).sort(()=>Math.random()-.5).slice(0,3).map(x=>x.sci)];
+    } else if(type==='fam'){
+      question=`Which plant family does <strong>${c.name}</strong> belong to?`;
+      correct=c.fam;
+      const allFams=[...new Set(CROPS.map(x=>x.fam))];
+      opts=[c.fam,...allFams.filter(f=>f!==c.fam).sort(()=>Math.random()-.5).slice(0,3)];
+    } else {
+      question=`Which crop is known as <em>"${c.nicks.split(',')[0].trim()}"</em>?`;
+      correct=c.name;
+      opts=[c.name,...CROPS.filter(x=>x!==c).sort(()=>Math.random()-.5).slice(0,3).map(x=>x.name)];
+    }
+    opts=opts.sort(()=>Math.random()-.5);
+    qs.push({question,correct,opts,crop:c,type});
+  }
+  return qs;
+}
+function startQuizTimer() {
+  quizTimeLeft = 15;
+  if (quizTimer) clearInterval(quizTimer);
+  updateTimerBar(15, 15);
+  quizTimer = setInterval(() => {
+    quizTimeLeft--;
+    updateTimerBar(quizTimeLeft, 15);
+    if (quizTimeLeft <= 0) {
+      clearInterval(quizTimer);
+      if (!quizAnswered) timeoutQuestion();
+    }
+  }, 1000);
+}
+function updateTimerBar(left, total) {
+  const bar = document.getElementById('quiz-timer-bar');
+  const label = document.getElementById('q-timer-label');
+  if (!bar) return;
+  const pct = (left/total)*100;
+  bar.style.width = pct+'%';
+  bar.className = 'quiz-timer-bar' + (pct < 34 ? ' danger' : pct < 60 ? ' warning' : '');
+  if (label) label.textContent = left + 's';
+}
+function timeoutQuestion() {
+  quizAnswered = true;
+  quizStreak = 0;
+  const q = quizQuestions[quizCurrent];
+  const opts = document.querySelectorAll('.quiz-opt');
+  opts.forEach(b => {
+    b.disabled = true;
+    if (b.textContent.trim() === q.correct) b.classList.add('correct');
+  });
+  const res = document.getElementById('quiz-result');
+  res.classList.add('show','wrong-r');
+  res.innerHTML = `⏰ Time's up! Answer: <strong>${q.correct}</strong>`;
+  document.getElementById('next-btn').style.display='block';
+  recordQuizAnswer(q.crop.no, false);
+  updateStreakBadge();
+}
+function recordQuizAnswer(no, correct) {
+  const p = loadProg();
+  p.quizHistory.push({no, correct, ts: Date.now()});
+  if (p.quizHistory.length > 200) p.quizHistory = p.quizHistory.slice(-200);
+  saveProg(p);
+}
+function updateStreakBadge() {
+  const el = document.getElementById('quiz-streak');
+  const sc = document.getElementById('streak-count');
+  if (el && sc) {
+    sc.textContent = quizStreak;
+    el.style.display = quizStreak >= 2 ? 'inline-flex' : 'none';
+  }
+}
+function renderQuestion() {
+  const container = document.getElementById('quiz-container');
+  if (quizCurrent >= quizQuestions.length) {
+    clearInterval(quizTimer);
+    const pct = Math.round(quizScore/quizQuestions.length*100);
+    const star = pct>=80?'🏆':pct>=60?'🌟':'💪';
+    const grade = pct>=80?'#27AE60':pct>=60?'#E8A020':'#e74c3c';
+    const msg = pct>=80?'Outstanding work!':pct>=60?'Good job, keep going!':'Keep practising — you\'ll get it!';
+    totalScore += quizScore;
+    updateScore();
+    const wrongs = quizQuestions.filter((q,i)=>!q.wasCorrect).slice(0,5);
+    const wrongsHtml = wrongs.length ? `<div class="quiz-wrong-list"><div class="quiz-wrong-title">Review These:</div>${wrongs.map(q=>`<div class="quiz-wrong-item" onclick="openModal(CROPS.find(c=>c.no===${q.crop.no}))"><div class="wname">${q.crop.name}</div><div class="wsci">${q.crop.sci} · ${q.crop.fam}</div></div>`).join('')}</div>` : '';
+    if (pct >= 80) confetti();
+    container.innerHTML = `<div class="quiz-score-final">
+      <div class="quiz-star">${star}</div>
+      <h2>${quizScore} / ${quizQuestions.length}</h2>
+      <div class="quiz-grade-bar"><div class="quiz-grade-fill" style="width:0%;background:${grade}" id="grade-fill"></div></div>
+      <p>${msg}</p>${wrongsHtml}
+      <div class="final-actions">
+        <button class="btn-primary" onclick="startQuiz()">Try Again 🔄</button>
+        <button class="btn-primary" style="background:var(--earth)" onclick="showPage('flashcard',document.querySelector('[data-page=flashcard]'))">Review Flashcards</button>
+      </div>
+    </div>`;
+    setTimeout(()=>{ const gf=document.getElementById('grade-fill'); if(gf) gf.style.width=pct+'%'; },100);
+    return;
+  }
+  const q = quizQuestions[quizCurrent];
+  quizAnswered = false;
+  container.innerHTML = `
+    <div class="quiz-q-box">
+      <div class="quiz-timer-bar" id="quiz-timer-bar" style="width:100%"></div>
+      <div class="q-meta">
+        <div class="q-num">Q${quizCurrent+1} of ${quizQuestions.length} · Score: ${quizScore}</div>
+        <div class="q-timer" id="q-timer-label">15s</div>
+      </div>
+      <div class="q-text">${q.question}</div>
+    </div>
+    <div class="quiz-opts" id="quiz-opts">
+      ${q.opts.map(o=>`<button class="quiz-opt" onclick="answerQuiz('${o.replace(/['"]/g,'`')}','${q.correct.replace(/['"]/g,'`')}',this,${quizCurrent})">${o}</button>`).join('')}
+    </div>
+    <div class="quiz-result" id="quiz-result"></div>
+    <div class="quiz-nav" style="margin-top:.75rem">
+      <span style="font-size:.78rem;color:var(--muted)">${q.crop.cat.toUpperCase()}</span>
+      <button class="btn-primary" id="next-btn" onclick="nextQuestion()" style="display:none">Next →</button>
+    </div>
+  `;
+  startQuizTimer();
+}
+function answerQuiz(ans, correct, btn, qIdx) {
+  if (quizAnswered || qIdx !== quizCurrent) return;
+  quizAnswered = true;
+  clearInterval(quizTimer);
+  document.querySelectorAll('.quiz-opt').forEach(b=>b.disabled=true);
+  const res = document.getElementById('quiz-result');
+  const q = quizQuestions[quizCurrent];
+  const c = q.crop;
+  const isCorrect = ans===correct;
+  q.wasCorrect = isCorrect;
+  if (isCorrect) {
+    btn.classList.add('correct');
+    quizScore++; quizStreak++;
+    if (quizStreak > quizBestStreak) quizBestStreak = quizStreak;
+    res.classList.add('show');
+    res.innerHTML = `✅ Correct! ${c.name} — <em>${c.sci}</em> · ${c.fam}`;
+    recordQuizAnswer(c.no, true);
+  } else {
+    btn.classList.add('wrong');
+    document.querySelectorAll('.quiz-opt').forEach(b=>{if(b.textContent.trim()===correct)b.classList.add('correct');});
+    quizStreak = 0;
+    res.classList.add('show','wrong-r');
+    res.innerHTML = `❌ Answer: <strong>${correct}</strong> · ${c.name} — <em>${c.sci}</em>`;
+    recordQuizAnswer(c.no, false);
+  }
+  updateStreakBadge();
+  document.getElementById('next-btn').style.display='block';
+}
+function nextQuestion() { quizCurrent++; renderQuestion(); }
+function updateScore() {
+  document.getElementById('score-badge').textContent = 'Score: '+totalScore;
+  document.getElementById('mob-score').textContent = 'Score: '+totalScore;
+}
+
+/* ===== FAMILIES ===== */
+function renderFamilies() {
+  const container = document.getElementById('families-list');
+  container.innerHTML = '';
+  Object.entries(FAMILIES).forEach(([fam,info]) => {
+    const crops = CROPS.filter(c=>c.fam===fam);
+    const div = document.createElement('div');
+    div.className = 'fam-section';
+    div.innerHTML = `
+      <div class="fam-header" onclick="toggleFam(this)">
+        <div style="flex:1">
+          <div class="fam-name">${fam}</div>
+          <div class="fam-desc">${info.desc}</div>
+        </div>
+        <span class="fam-count">${crops.length}</span>
+        <span class="fam-arrow">▸</span>
+      </div>
+      <div class="fam-key-fact">${info.fact}</div>
+      <div class="fam-crops">
+        ${crops.map(c=>`<div class="fam-crop-pill" onclick="openModalByName('${c.name.replace(/'/g,"\\'")}')">${c.name}<div class="fam-crop-sci">${c.sci}</div></div>`).join('')}
+      </div>
+    `;
+    container.appendChild(div);
+  });
+}
+function toggleFam(header) {
+  const fact = header.nextElementSibling;
+  const crops = fact.nextElementSibling;
+  const open = crops.classList.toggle('open');
+  fact.classList.toggle('open',open);
+  header.classList.toggle('open',open);
+  header.querySelector('.fam-arrow').textContent = open ? '▾' : '▸';
+}
+function openModalByName(name) {
+  const c = CROPS.find(x=>x.name===name);
+  if (c) openModal(c);
+}
+
+/* ===== MATCH GAME ===== */
+let matchTimerInterval = null;
+function startMatch() {
+  if (matchTimerInterval) clearInterval(matchTimerInterval);
+  const shuffled = [...CROPS].sort(()=>Math.random()-.5).slice(0,6);
+  matchState = {crops:shuffled, selectedName:null, selectedSci:null, matched:[], errors:0, startTime:Date.now()};
+  document.getElementById('match-complete').classList.remove('visible');
+  matchTimerInterval = setInterval(updateMatchTimer, 1000);
+  renderMatch();
+}
+function startMatchCat() { startMatch(); } // Could filter by last category
+function updateMatchTimer() {
+  if (!matchState.startTime) return;
+  const s = Math.floor((Date.now()-matchState.startTime)/1000);
+  const m = Math.floor(s/60);
+  const ss = s%60;
+  const el = document.getElementById('m-timer');
+  if (el) el.textContent = `${m}:${ss.toString().padStart(2,'0')}`;
+}
+function renderMatch() {
+  const names = [...matchState.crops].sort(()=>Math.random()-.5);
+  const scis = [...matchState.crops].sort(()=>Math.random()-.5);
+  const grid = document.getElementById('match-grid');
+  grid.innerHTML = '';
+  const leftCol = document.createElement('div');
+  const rightCol = document.createElement('div');
+  leftCol.className = 'match-col';
+  rightCol.className = 'match-col';
+  names.forEach(c => {
+    const btn = document.createElement('button');
+    btn.className = 'match-card';
+    btn.dataset.name = c.name;
+    btn.textContent = c.name;
+    btn.onclick = () => selectMatchName(c.name);
+    leftCol.appendChild(btn);
+  });
+  scis.forEach(c => {
+    const btn = document.createElement('button');
+    btn.className = 'match-card';
+    btn.dataset.sci = c.sci;
+    btn.dataset.name = c.name;
+    btn.innerHTML = `<span class="sci-text">${c.sci}</span>`;
+    btn.onclick = () => selectMatchSci(c.name, c.sci, btn);
+    rightCol.appendChild(btn);
+  });
+  grid.appendChild(leftCol);
+  grid.appendChild(rightCol);
+  updateMatchMeta();
+}
+function selectMatchName(name) {
+  if (matchState.matched.includes(name)) return;
+  matchState.selectedName = name;
+  document.querySelectorAll('.match-col:first-child .match-card').forEach(b => {
+    b.classList.toggle('selected', b.dataset.name === name);
+  });
+}
+function selectMatchSci(cropName, sci, btn) {
+  if (!matchState.selectedName) return;
+  if (matchState.matched.includes(cropName) && matchState.matched.includes(matchState.selectedName)) return;
+  if (matchState.selectedName === cropName) {
+    // Correct!
+    matchState.matched.push(cropName);
+    // Mark left card
+    document.querySelectorAll('.match-col:first-child .match-card').forEach(b => {
+      if (b.dataset.name === cropName) b.classList.replace('selected','matched');
+    });
+    // Mark right card
+    btn.classList.add('matched');
+    matchState.selectedName = null;
+    updateMatchMeta();
+    if (matchState.matched.length === matchState.crops.length) {
+      clearInterval(matchTimerInterval);
+      const s = Math.floor((Date.now()-matchState.startTime)/1000);
+      const errs = matchState.errors;
+      const emoji = errs===0?'🏆':errs<=2?'🌟':'👍';
+      document.getElementById('match-emoji').textContent = emoji;
+      document.getElementById('match-result-title').textContent = errs===0?'Perfect Match!':'Round Complete!';
+      document.getElementById('match-result-sub').textContent = `Matched all 6 in ${Math.floor(s/60)}m ${s%60}s with ${errs} error${errs!==1?'s':''}`;
+      document.getElementById('match-complete').classList.add('visible');
+      if (errs === 0) confetti();
+    }
+  } else {
+    // Wrong!
+    matchState.errors++;
+    matchState.selectedName = null;
+    btn.classList.add('wrong');
+    document.querySelectorAll('.match-col:first-child .match-card').forEach(b=>b.classList.remove('selected'));
+    setTimeout(()=>btn.classList.remove('wrong'), 500);
+    updateMatchMeta();
+  }
+}
+function updateMatchMeta() {
+  document.getElementById('m-matched').textContent = `${matchState.matched.length}/6`;
+  document.getElementById('m-errors').textContent = matchState.errors;
+}
+
+/* ===== CONFETTI ===== */
+function confetti() {
+  const colors = ['#E8A020','#3A6B35','#5A9E52','#8DC26F','#F2CC78','#D45A8C','#4A90D9'];
+  const container = document.getElementById('confetti-container');
+  for (let i=0;i<60;i++) {
+    const p = document.createElement('div');
+    p.className = 'confetti-piece';
+    p.style.cssText = `
+      left:${Math.random()*100}%;
+      background:${colors[Math.floor(Math.random()*colors.length)]};
+      width:${6+Math.random()*6}px;
+      height:${6+Math.random()*6}px;
+      border-radius:${Math.random()>0.5?'50%':'2px'};
+      animation-duration:${2+Math.random()*2}s;
+      animation-delay:${Math.random()*0.8}s;
+    `;
+    container.appendChild(p);
+    setTimeout(()=>p.remove(), 4000);
+  }
+}
+
+/* ===== INIT ===== */
+(function init() {
+  // Restore theme
+  try {
+    const t = localStorage.getItem('cropsci_theme');
+    if (t) {
+      document.documentElement.setAttribute('data-theme',t);
+      const icon = t==='dark'?'☀️':'🌙';
+      document.getElementById('dark-btn-desk').textContent=icon;
+      document.getElementById('dark-btn-mob').textContent=icon;
+    }
+  } catch{}
+
+  renderGrid();
+  renderFlashcard();
+  updateProgressUI();
+})();
+</script>
+</body>
+</html>
